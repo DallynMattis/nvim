@@ -23,6 +23,7 @@ Plug 'morhetz/gruvbox'
 Plug 'pangloss/vim-javascript'
 Plug 'grvcoelho/vim-javascript-snippets'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
+Plug 'mechatroner/rainbow_csv'
 call plug#end()
 
 
@@ -68,3 +69,13 @@ set number
 syntax on
 set ruler
 set title
+
+"set foldmethod =marker for js documents
+
+if(&filetype=='javascript')
+    set foldmethod=marker
+
+
+
+
+
