@@ -16,13 +16,15 @@ Plug 'honza/vim-snippets'
 autocmd VimEnter * NERDTree | wincmd p
 autocmd 
 
-
+Plug 'dense-analysis/ale'
 Plug 'preservim/nerdcommenter'
 Plug 'tpope/vim-surround'
 Plug 'morhetz/gruvbox'
 Plug 'pangloss/vim-javascript'
 Plug 'grvcoelho/vim-javascript-snippets'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
+Pluf 'kshenoy/vim-signature'
+
 Plug 'mechatroner/rainbow_csv'
 call plug#end()
 
