@@ -23,8 +23,8 @@ Plug 'morhetz/gruvbox'
 Plug 'pangloss/vim-javascript'
 Plug 'grvcoelho/vim-javascript-snippets'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
-Pluf 'kshenoy/vim-signature'
-
+Plug 'kshenoy/vim-signature'
+Plug 'junegunn/vim-peekaboo'
 Plug 'mechatroner/rainbow_csv'
 call plug#end()
 
@@ -40,6 +40,7 @@ map <ScrollWheelDown> <C-E>
 " Theme Config
 colorscheme gruvbox 
 
+set clipboard+=unnamed
 
 "set number
 set numberwidth=4
