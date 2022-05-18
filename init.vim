@@ -2,19 +2,29 @@ call plug#begin('~/nvim/plugged')
 " below are some vim plugins for demonstration purpose.
 " add the plugin you want to use here.
 Plug 'iCyMind/NeoSolarized'  
+"docs a gauche de l'ecran
 Plug 'preservim/nerdtree'
+
 Plug 'pangloss/vim-javascript'
+
 Plug 'prettier/vim-prettier'
+"copilot
 Plug 'github/copilot.vim'
+
+"affichage au debut de vim avec la vache
 Plug 'mhinz/vim-startify'
+
 Plug 'grvcoelho/vim-javascript-snippets'
 Plug 'tpope/vim-commentary'
 Plug 'preservim/nerdtree'
+"theme
 Plug 'dracula/vim'
 Plug 'honza/vim-snippets'
 " Start NERDTree and leave the cursor in it.
 autocmd VimEnter * NERDTree | wincmd p
 autocmd 
+"git plugin for git access
+"Plug 'tpope/vim-fugitive'
 
 Plug 'dense-analysis/ale'
 Plug 'preservim/nerdcommenter'
@@ -25,6 +35,8 @@ Plug 'grvcoelho/vim-javascript-snippets'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'kshenoy/vim-signature'
 Plug 'junegunn/vim-peekaboo'
+" plantuml plugin 
+Plug 'aklt/plantuml-syntax'
 Plug 'mechatroner/rainbow_csv'
 call plug#end()
 
@@ -73,11 +85,13 @@ syntax on
 set ruler
 set title
 
+setlocal makeprg=java\ -jar\ plantuml.jar\ ./%\ -o\ /mnt/c/dev
+
 "set foldmethod =marker for js documents
 
 if(&filetype=='javascript')
     set foldmethod=marker
-
+endif
 
 
 
