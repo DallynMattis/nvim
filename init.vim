@@ -85,14 +85,12 @@ syntax on
 set ruler
 set title
 
-setlocal makeprg=java\ -jar\ plantuml.jar\ ./%\ -o\ /mnt/c/dev
+
+autocmd FileType plantuml setlocal makeprg=java\ -jar\ plantuml.jar\ ./%\ -o\ /mnt/c/dev
 
 "set foldmethod =marker for js documents
 
-if(&filetype=='javascript')
-    set foldmethod=marker
-endif
-
+autocmd FileType javascript set foldmethod=marker
 
 
 
