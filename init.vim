@@ -42,11 +42,41 @@ Plug 'matveyt/neoclip'
 "git plugin
 Plug 'tpope/vim-fugitive'
 
-"scrollbar minimap
-Plug 'wfxr/minimap.vim',{'do': ':!cargo install --locked code-minimap'}
 
 
 
+
+"scrollbar minimap + config
+Plug 'wfxr/code-minimap', { 'do': ':UpdateRemotePlugins' }
+Plug 'wfxr/minimap.vim'
+
+
+" Set up minimap
+let g:minimap_width = 10        " Width of the minimap window
+let g:minimap_auto_start = 1    " Automatically start minimap when opening a file
+let g:minimap_auto_start_win_enter = 1  " Start minimap when entering a window
+
+" Customize minimap colors (optional)
+highlight MinimapCurrentLine ctermfg=NONE ctermbg=NONE cterm=NONE gui=NONE guibg=#666666
+
+" Toggle minimap with a key mapping (optional)
+nnoremap <silent> <leader>m :MinimapToggle<CR>
+
+" Customize the minimap's appearance (optional)
+let g:minimap_highlight_range = 1
+let g:minimap_highlight_search = 1
+
+" Set the minimap to display only specific file types (optional)
+let g:minimap_filetypes = ['python', 'javascript', 'typescript']
+
+
+
+
+
+
+" airline display
+Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
 
 "PLUGIN FOR COMPLETION
 
@@ -60,52 +90,6 @@ Plug 'jiangmiao/auto-pairs'
 Plug 'tpope/vim-unimpaired'
 
 "CoC Settings
-" Use tab for trigger completion with characters ahead and navigate.
-" NOTE: Use command ':verbose imap <tab>' to make sure tab is not mapped by
-" other plugin before putting this into your config.
-inoremap <silent><expr> <TAB>
-      \ pumvisible() ? "\<C-n>" :
-      \ <SID>check_back_space() ? "\<TAB>" :
-      \ coc#refresh()
-inoremap <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
- 
-function! s:check_back_space() abort
-  let col = col('.') - 1
-  return !col || getline('.')[col - 1]  =~# '\s'
-endfunction
- 
-" Make <CR> to accept selected completion item or notify coc.nvim to format
-" <C-g>u breaks current undo, please make your own choice.
-inoremap <silent><expr> <CR> coc#pum#visible() ? coc#pum#confirm()
-                              \: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
-"Ultisnips Settings
-let g:UltiSnipsExpandTrigger="<tab>"
-let g:UltiSnipsJumpForwardTrigger="<c-b>"
-let g:UltiSnipsJumpBackwardTrigger="<c-z>"
- 
-" If you want :UltiSnipsEdit to split your window.
-let g:UltiSnipsEditSplit="vertical"
- 
-"coc-snippets Settings
-"inoremap <silent><expr> <TAB>
-"      \ coc#pum#visible() ? coc#_select_confirm() :
-"      \ coc#expandableOrJumpable() ? "\<C-r>=coc#rpc#request('doKeymap', ['snippets-expand-jump',''])\<CR>" :
-"      \ CheckBackspace() ? "\<TAB>" :
-"      \ coc#refresh()
-"
-"function! CheckBackspace() abort
-"  let col = col('.') - 1
-"  return !col || getline('.')[col - 1]  =~# '\s'
-"endfunction
-"
-"let g:coc_snippet_next = '<tab>'
-
-
-
-
-let g:minimap_width = 10
-let g:minimap_auto_sart = 1
-let g:minimap_auto_start_win_enter = 1
 
 
 
@@ -114,11 +98,6 @@ call plug#end()
 
 
 set mouse=a
-map <ScrollWheelUp> <C-Y>
-map <ScrollWheelDown> <C-E>
-"set modifiable on
-"set modifiable on 
-
 
 "Theme Config
 colorscheme gruvbox 
@@ -151,8 +130,36 @@ set number
 syntax on
 set ruler
 set title
+set nocompatible
+let mapleader=","
+nmap <leader>rn<Plug>(coc-rename)
+
+"airline Config
+let g:airline#extensions#tabline#enabled = 1
+let g:airline#extensions#tabline#left_sep = ' '
+let g:airline#extensions#tabline#left_alt_sep = '|'
+let g:airline#extensions#tabline#formatter = 'default'
+let g:airline_powerline_fonts = 1
 
 
+
+" To display spaces and change colors
+"
+" SpecialKey is the name of group including spaces,
+" ctermfg => color terminal  foreground
+" to disable : 'set nolist'
+set listchars=tab:>-,trail:.,extends:>,precedes:<,space:.,nbsp:!
+" list of filetypes for wich we want spaces to be displayed
+autocmd FileType vim setlocal list
+autocmd FileType yaml setlocal list
+
+
+
+" Ale linters 
+
+let g:ale_linters = {
+\   'javascript': ['eslint'],
+\   'go': ['golangci-lint', 'gofmt']}
 autocmd FileType plantuml setlocal makeprg=java\ -jar\ plantuml.jar\ ./%\ -o\ /mnt/c/dev
 
 "set foldmethod =marker for js documents
