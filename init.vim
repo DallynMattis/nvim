@@ -5,6 +5,7 @@ call plug#begin('~/.config/nvim/plugged')
 Plug 'iCyMind/NeoSolarized'  
 "docs a gauche de l'ecran
 
+Plug 'ryanoasis/vim-devicons'
 Plug 'pangloss/vim-javascript'
 
 Plug 'prettier/vim-prettier'
@@ -54,7 +55,7 @@ Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'fannheyward/coc-pyright'
 Plug 'rafi/awesome-vim-colorschemes'
 Plug 'ap/vim-css-color'
-Plug 'SirVer/ultisnips'
+"aPlug 'SirVer/ultisnips'
 Plug 'honza/vim-snippets'
 Plug 'jiangmiao/auto-pairs'
 Plug 'tpope/vim-unimpaired'
@@ -123,9 +124,9 @@ map <ScrollWheelDown> <C-E>
 "Theme Config
 colorscheme gruvbox 
 
+let g:NERDTreeShowHidden = 1
 set clipboard+=unnamed
 set showmatch
-
 set tabstop=4 softtabstop=2 shiftwidth=4
 filetype plugin indent on
 set foldlevelstart=10
