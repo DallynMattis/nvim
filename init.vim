@@ -1,23 +1,31 @@
 call plug#begin('~/.config/nvim/plugged')
 
-" below are some vim plugins for demonstration purpose.
-" add the plugin you want to use here.
+" Set <leader> to comma
+let mapleader = ","
+
+"below are some vim plugins for demonstration purpose.
+"add the plugin you want to use here.
 Plug 'iCyMind/NeoSolarized'  
 "docs a gauche de l'ecran
 
 Plug 'ryanoasis/vim-devicons'
 Plug 'pangloss/vim-javascript'
 
-Plug 'prettier/vim-prettier'
+" post install (yarn install | npm install) then load plugin only for editing supported files
+Plug 'prettier/vim-prettier', { 'do': 'yarn install --frozen-lockfile --production' }
+
 "copilot
-Plug 'github/copilot.vim'
+"Plug 'github/copilot.vim'
 
 "affichage au debut de vim avec la vache
 Plug 'mhinz/vim-startify'
 
 Plug 'grvcoelho/vim-javascript-snippets'
 Plug 'tpope/vim-commentary'
+
 Plug 'preservim/nerdtree'
+let NERDTreeShowHidden=1
+
 Plug 'dracula/vim'
 
 
@@ -45,14 +53,15 @@ Plug 'tpope/vim-fugitive'
 
 
 
-
-
 "scrollbar minimap + config
-Plug 'wfxr/code-minimap', { 'do': ':UpdateRemotePlugins' }
 Plug 'wfxr/minimap.vim'
+Plug 'wfxr/code-minimap'
 
 
 " Set up minimap
+" Enable code-minimap
+let g:code_minimap_enable = 1
+let g:code_minimap_width = 10
 let g:minimap_width = 10        " Width of the minimap window
 let g:minimap_auto_start = 1    " Automatically start minimap when opening a file
 let g:minimap_auto_start_win_enter = 1  " Start minimap when entering a window
@@ -73,16 +82,12 @@ let g:minimap_filetypes = ['python', 'javascript', 'typescript']
 
 
 
-
-
 " airline display
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
 
 "PLUGIN FOR COMPLETION
 
-Plug 'neoclide/coc.nvim', {'branch': 'release'}
-Plug 'fannheyward/coc-pyright'
 Plug 'rafi/awesome-vim-colorschemes'
 Plug 'ap/vim-css-color'
 "aPlug 'SirVer/ultisnips'
@@ -92,7 +97,16 @@ Plug 'tpope/vim-unimpaired'
 
 "CoC Settings
 
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
+Plug 'fannheyward/coc-pyright'
 
+" Make <CR> to accept selected completion item or notify coc.nvim to format
+" <C-g>u breaks current undo, please make your own choice.
+inoremap <silent><expr> <CR> coc#pum#visible() ? coc#pum#confirm()
+                              \: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
+
+" configs
+nmap <leader>rn <Plug>(coc-rename)
 
 call plug#end()
 
@@ -101,7 +115,7 @@ call plug#end()
 set mouse=a
 
 "Theme Config
-colorscheme gruvbox 
+colorscheme gruvbox
 
 let g:NERDTreeShowHidden = 1
 set clipboard+=unnamed
@@ -132,8 +146,6 @@ syntax on
 set ruler
 set title
 set nocompatible
-let mapleader=","
-nmap <leader>rn<Plug>(coc-rename)
 
 "airline Config
 let g:airline#extensions#tabline#enabled = 1
