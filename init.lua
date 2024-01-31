@@ -33,26 +33,51 @@ require('lazy').setup({
     --{'wfxr/minimap.vim'},
     --{'wfxr/code-minimap'},
     {'vim-airline/vim-airline'},
-    {'vim-airline/vim-airline-themes'},
+    --{'vim-airline/vim-airline-themes'},
     {'rafi/awesome-vim-colorschemes'},
     {'ap/vim-css-color'},
     {'honza/vim-snippets'},
     {'jiangmiao/auto-pairs'},
     --{'neoclide/coc.nvim'},
-    --{'fannheyward/coc-pyright'}
-})
---[[] Set up minimap
-vim.g.code_minimap_enable = 1
-vim.g.code_minimap_width = 10
-vim.g.minimap_width = 10
-vim.g.minimap_auto_start = 1
-vim.g.minimap_auto_start_win_enter = 1
-vim.cmd('highlight MinimapCurrentLine ctermfg=NONE ctermbg=NONE cterm=NONE gui=NONE guibg=#666666')
-vim.api.nvim_set_keymap('n', '<leader>m', ':MinimapToggle<CR>', { noremap = true, silent = true })
-vim.g.minimap_highlight_range = 1
-vim.g.minimap_highlight_search = 1
-vim.g.minimap_filetypes = {'python', 'javascript', 'typescript'}
-]]
+    --{'fannheyward/coc-pyright'},
+    {'rebelot/kanagawa.nvim'},
+ --[[   {
+        "hrsh7th/nvim-cmp",
+        opts = {
+          sources = {
+            -- other sources
+            {
+              name = "html-css",
+              option = {
+                enable_on = {
+                  "html",
+                }, -- set the file types you want the plugin to work on
+                file_extensions = { "css", "sass", "less" }, -- set the local filetypes from which you want to derive classes
+                style_sheets = {
+                  -- example of remote styles, only css no js for now
+                  "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css",
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        "Jezda1337/nvim-html-css",
+        dependencies = {
+          "nvim-treesitter/nvim-treesitter",
+          "nvim-lua/plenary.nvim",
+        },
+        config = function()
+          require("html-css"):setup()
+        end,
+      },]]
+    })
+
+
+
+
+
 
 
 --Airline display configuration
@@ -64,7 +89,7 @@ vim.g.airline_powerline_fonts = 1
 
 -- Set miscellaneous configurations
 vim.o.mouse = 'a'
-vim.cmd('colorscheme gruvbox')
+vim.cmd('colorscheme kanagawa')
 vim.o.clipboard = 'unnamed'
 vim.o.showmatch = true
 vim.o.tabstop = 4
@@ -72,7 +97,6 @@ vim.o.softtabstop = 2
 vim.o.shiftwidth = 4
 vim.o.filetype = 'on'
 vim.o.foldlevelstart = 10
-vim.o.clipboard = 'unnamedplus'
 vim.o.signcolumn = 'number'
 vim.o.encoding = 'UTF-8'
 vim.o.updatetime = 300
@@ -98,6 +122,7 @@ vim.o.title = true
 vim.cmd('set nocompatible')
 
 
+
 -- Display nerdtree when enter
 vim.cmd[[
 autocmd VimEnter * NERDTree | wincmd p
@@ -109,5 +134,43 @@ let g:NERDTreeWinSize = 25
 -- Set foldmethod for JavaScript documents
 vim.cmd[[autocmd FileType javascript set foldmethod=marker]]
 
--- Example using a list of specs with the default options
-vim.g.mapleader = " " -- Make sure to set `mapleader` before lazy so your mappings are correct
+
+
+
+--[[  Use win32yank for clipboard integration in WSL
+
+local o =vim.o
+local wo=vim.wo
+
+wo.nu=true
+wo.rnu=true
+vim.o.clipboard = 'unnamedplus'
+
+o.expandtab= true
+o.tabstop =4
+o.shiftwidth =4
+
+  vim.g.clipboard = {
+    name = 'win32yank-wsl',
+    copy = {
+      ['+'] = 'win32yank.exe -i --crlf',
+      ['*'] = 'win32yank.exe -i --crlf',
+    },
+    paste = {
+      ['+'] = 'win32yank.exe -o --lf',
+      ['*'] = 'win32yank.exe -o --lf',
+    },
+    cache_enabled = true,
+  }
+
+  ]]
+
+-- Use xclip for clipboard integration
+vim.api.nvim_set_var('clipboard', {
+  name = 'xclip',
+  copy = { ['+'] = 'xclip -selection clipboard', ['*'] = 'xclip -selection clipboard' },
+  paste = { ['+'] = 'xclip -selection clipboard -o', ['*'] = 'xclip -selection clipboard -o' },
+  cache_enabled = 0,
+})
+
+
