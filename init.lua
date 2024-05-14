@@ -18,8 +18,6 @@ require('lazy').setup({
     {'grvcoelho/vim-javascript-snippets'},
     {'tpope/vim-commentary'},
     {'preservim/nerdtree'},
-    {'dracula/vim'},
-    {'dense-analysis/ale'},
     {'preservim/nerdcommenter'},
     {'tpope/vim-surround'},
     {'morhetz/gruvbox'},
@@ -30,54 +28,16 @@ require('lazy').setup({
     {'mechatroner/rainbow_csv'},
     {'matveyt/neoclip'},
     {'tpope/vim-fugitive'},
-    --{'wfxr/minimap.vim'},
-    --{'wfxr/code-minimap'},
+    {'diepm/vim-rest-console'},
     {'vim-airline/vim-airline'},
-    --{'vim-airline/vim-airline-themes'},
     {'rafi/awesome-vim-colorschemes'},
     {'ap/vim-css-color'},
     {'honza/vim-snippets'},
     {'jiangmiao/auto-pairs'},
-    --{'neoclide/coc.nvim'},
-    --{'fannheyward/coc-pyright'},
+    {'github/copilot.vim'},
     {'rebelot/kanagawa.nvim'},
- --[[   {
-        "hrsh7th/nvim-cmp",
-        opts = {
-          sources = {
-            -- other sources
-            {
-              name = "html-css",
-              option = {
-                enable_on = {
-                  "html",
-                }, -- set the file types you want the plugin to work on
-                file_extensions = { "css", "sass", "less" }, -- set the local filetypes from which you want to derive classes
-                style_sheets = {
-                  -- example of remote styles, only css no js for now
-                  "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css",
-                },
-              },
-            },
-          },
-        },
-      },
-      {
-        "Jezda1337/nvim-html-css",
-        dependencies = {
-          "nvim-treesitter/nvim-treesitter",
-          "nvim-lua/plenary.nvim",
-        },
-        config = function()
-          require("html-css"):setup()
-        end,
-      },]]
-    })
-
-
-
-
-
+    {'raghur/vim-ghost'},
+})
 
 
 --Airline display configuration
@@ -89,7 +49,6 @@ vim.g.airline_powerline_fonts = 1
 
 -- Set miscellaneous configurations
 vim.o.mouse = 'a'
-vim.cmd('colorscheme kanagawa')
 vim.o.clipboard = 'unnamed'
 vim.o.showmatch = true
 vim.o.tabstop = 4
@@ -121,7 +80,12 @@ vim.o.ruler = true
 vim.o.title = true
 vim.cmd('set nocompatible')
 
+--python3 
+vim.g.python3_host_prog = '/usr/bin/python3'
 
+
+-- tabby configuration
+-- vim.g.tabby_keybinding_accept = '<Tab>'
 
 -- Display nerdtree when enter
 vim.cmd[[
@@ -130,47 +94,16 @@ let g:NERDTreeShowHidden = 1
 let g:NERDTreeWinSize = 25
 ]]
 
-
 -- Set foldmethod for JavaScript documents
 vim.cmd[[autocmd FileType javascript set foldmethod=marker]]
 
+-- set colorscheme
+vim.cmd[[colorscheme tender]]
 
+-- shortcuts
+-- Allow search of currently selected text using //
+vim.api.nvim_set_keymap('v', '//', 'y/<C-R>"<CR>', { noremap = true })
 
-
---[[  Use win32yank for clipboard integration in WSL
-
-local o =vim.o
-local wo=vim.wo
-
-wo.nu=true
-wo.rnu=true
-vim.o.clipboard = 'unnamedplus'
-
-o.expandtab= true
-o.tabstop =4
-o.shiftwidth =4
-
-  vim.g.clipboard = {
-    name = 'win32yank-wsl',
-    copy = {
-      ['+'] = 'win32yank.exe -i --crlf',
-      ['*'] = 'win32yank.exe -i --crlf',
-    },
-    paste = {
-      ['+'] = 'win32yank.exe -o --lf',
-      ['*'] = 'win32yank.exe -o --lf',
-    },
-    cache_enabled = true,
-  }
-
-  ]]
-
--- Use xclip for clipboard integration
-vim.api.nvim_set_var('clipboard', {
-  name = 'xclip',
-  copy = { ['+'] = 'xclip -selection clipboard', ['*'] = 'xclip -selection clipboard' },
-  paste = { ['+'] = 'xclip -selection clipboard -o', ['*'] = 'xclip -selection clipboard -o' },
-  cache_enabled = 0,
-})
-
+-- Allow clearing of searched text using ///
+vim.api.nvim_set_keymap('n', '///', ':nohl<CR>', { noremap = true })
 
