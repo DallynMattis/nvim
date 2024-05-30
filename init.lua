@@ -7,6 +7,29 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(vim.env.LAZY or lazypath)
 
+-- {{{ minimap : display a minimap on the right
+-- see :https://github.com/wfxr/minimap.vim
+-- started in dev mode
+local function plug_minimap()
+  return {
+    "wfxr/minimap.vim",
+    event = "VimEnter",
+    config = function()
+      vim.g.minimap_auto_start = 1
+      vim.g.minimap_auto_start_win_enter = 1
+      vim.g.minimap_width = 8 --default 10
+      vim.g.minimap_highlight_range = 1
+      vim.g.minimap_highlight_search = 1
+      vim.g.minimap_highlight_line = 1
+      vim.g.minimap_git_colors = 1
+      vim.g.minimap_auto_start_filetypes = {'markdown', 'yaml', 'json', 'html', 'css', 'scss', 'javascript', 'typescript', 'vue', 'go', 'lua'}
+      vim.g.minimap_close_filetypes = {'NvimTree', 'TelescopePrompt', 'TelescopeResults'}
+    end,
+  }
+end
+-- }}}
+
+
 require('lazy').setup({
     {'iCyMind/NeoSolarized'},
     {'nvim-treesitter/nvim-treesitter'},
@@ -37,6 +60,8 @@ require('lazy').setup({
     {'github/copilot.vim'},
     {'rebelot/kanagawa.nvim'},
     {'raghur/vim-ghost'},
+    {'folke/which-key.nvim'},
+    plug_minimap(),   
 })
 
 
@@ -79,6 +104,8 @@ vim.cmd('syntax on')
 vim.o.ruler = true
 vim.o.title = true
 vim.cmd('set nocompatible')
+
+
 
 --python3 
 vim.g.python3_host_prog = '/usr/bin/python3'
