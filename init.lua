@@ -258,8 +258,6 @@ require("lazy").setup({
 	{ "folke/which-key.nvim" },
 	{ "neovim/nvim-lspconfig" },
 	{ "liuchengxu/vista.vim" },
-	{ "williamboman/mason.nvim" },
-	{ "williamboman/mason-lspconfig.nvim" },
 	plug_treesitter(),
 	plug_x_go(),
 	plug_ale(),
@@ -339,12 +337,6 @@ vim.api.nvim_set_keymap("v", "<C-c>", '"+y', { noremap = true, silent = true })
 
 -- Allow clearing of searched text using ///
 vim.api.nvim_set_keymap("n", "///", ":nohl<CR>", { noremap = true })
-
--- Mason setup
-require("mason").setup()
-require("mason-lspconfig").setup({
-	ensure_installed = { "pyright", "tsserver" }, -- Ajouter ici les serveurs LSP que vous souhaitez installer
-})
 
 -- Use LspAttach autocommand to only map the following keys after the language server attaches to the current buffer
 vim.api.nvim_create_autocmd("LspAttach", {
