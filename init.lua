@@ -40,9 +40,6 @@ local function plug_ale()
 				lua = { "stylua" },
 			}
 			-- key mapping to Fix the file
-			-- document this key mapping for which-key
-			local wk = require("which-key")
-			wk.add({ a = { "<cmd>ALEFix<cr>", "ALE Fix" } }, { prefix = "<leader>" })
 		end,
 	}
 end
