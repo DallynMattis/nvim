@@ -26,6 +26,7 @@ local function plug_ale()
 				-- requires a project local config file
 				go = { "golint", "go vet", "golangci-lint", "staticcheck" },
 				yaml = { "yamllint", "spectral" },
+				html = { "tidy" },
 			}
 			vim.g.ale_fixers = {
 				typescript = { "prettier" },
@@ -137,23 +138,24 @@ local function plug_lspconfig()
 			--
 			-- See doc here : https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#tsserver
 			-- npm install -g typescript typescript-language-server
-			-- require'lspconfig'.tsserver.setup{
+			-- brew install coq
+			require("lspconfig").tsserver.setup({
 
-			--     -- to support COQ snippets
-			--     capabilities = require('coq').lsp_ensure_capabilities(),
+				-- to support COQ snippets
+				capabilities = require("coq").lsp_ensure_capabilities(),
 
-			--     init_options = {
-			--         preferences = {
-			--             disableSuggestions = true,
-			--         },
-			--     },
-			--     filetypes = {
-			--         "javascript",
-			--         "typescript",
-			--         "vue"
-			--     }
-			-- }
-			-- vim.cmd("autocmd FileType typescript setlocal foldmethod=syntax")
+				init_options = {
+					preferences = {
+						disableSuggestions = true,
+					},
+				},
+				filetypes = {
+					"javascript",
+					"typescript",
+					"vue",
+				},
+			})
+			vim.cmd("autocmd FileType typescript setlocal foldmethod=syntax")
 
 			-- For bash
 			-- see doc here https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#bashls
@@ -255,6 +257,7 @@ require("lazy").setup({
 	{ "folke/which-key.nvim" },
 	{ "neovim/nvim-lspconfig" },
 	{ "liuchengxu/vista.vim" },
+	{ "ms-jpq/coq_nvim" },
 	plug_treesitter(),
 	plug_x_go(),
 	plug_ale(),
