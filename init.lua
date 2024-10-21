@@ -326,7 +326,7 @@ vim.cmd([[autocmd FileType javascript set foldmethod=marker]])
 vim.cmd([[autocmd FileType golang set foldmethod=indent]])
 
 -- set colorscheme
-vim.cmd([[colorscheme tender]])
+vim.cmd([[colorscheme gruvbox]])
 
 -- shortcuts
 -- Allow search of currently selected text using //
