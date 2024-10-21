@@ -79,12 +79,12 @@ local function plug_x_go()
 		build = ':lua require("go.install").update_all_sync()', -- if you need to install/update all binaries
 	}
 end
--- }}}
+-- }}}/!\ IMPORTANT
 -- {{{ Treesitter : syntax highlighter
 -- see : https://github.com/nvim-treesitter/nvim-treesitter
--- Usage : TSInstallInfo
--- Usage : TSInstall <language>
--- Puis : TSEnable
+-- TSInstallInfo Pour voir les langages installés pour les highlighters
+-- Usage : TSInstall <language> pour installer un highlighter
+-- Puis : TSEnable highlight pour activer le highlighter
 -- :TSUpdate all
 local function plug_treesitter()
 	return {
