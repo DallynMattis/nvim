@@ -6,6 +6,7 @@
     s  = status
     comm = commit -m
     com  = commit
+    amend= commit --amend 
 [core]
     pager = delta
     editor = nvim
