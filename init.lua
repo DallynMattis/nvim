@@ -139,7 +139,7 @@ local function plug_lspconfig()
 			-- See doc here : https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#tsserver
 			-- npm install -g typescript typescript-language-server
 			-- brew install coq
-			require("lspconfig").tsserver.setup({
+			require("lspconfig").ts_ls.setup({
 
 				-- to support COQ snippets
 				capabilities = require("coq").lsp_ensure_capabilities(),
@@ -222,6 +222,44 @@ local function plug_lspconfig()
 	}
 end
 --- }}}
+---
+local function open_nvim_tree()
+  -- open the tree
+  if not vim.g.started_by_firenvim then
+    require("nvim-tree.api").tree.open()
+    -- do not leave focus on tree
+    vim.cmd(":wincmd w")
+  end
+end
+-- Display nvim-tree
+local function plug_nvim_tree()
+	return {
+		"nvim-tree/nvim-tree.lua",
+		version = "*",
+		lazy = false,
+		dependencies = {
+			"nvim-tree/nvim-web-devicons",
+		},
+		config = function()
+			require("nvim-tree").setup({
+				sort = {
+					sorter = "case_sensitive",
+				},
+				view = {
+					width = 30,
+				},
+				renderer = {
+					group_empty = true,
+				},
+				filters = {
+					dotfiles = true,
+				},
+			})
+			-- launch at start
+            vim.api.nvim_create_autocmd({ "VimEnter" }, { callback = open_nvim_tree })
+		end,
+	}
+end
 
 --
 require("lazy").setup({
@@ -234,7 +272,6 @@ require("lazy").setup({
 	{ "mhinz/vim-startify" },
 	{ "grvcoelho/vim-javascript-snippets" },
 	{ "tpope/vim-commentary" },
-	{ "preservim/nerdtree" },
 	{ "preservim/nerdcommenter" },
 	{ "tpope/vim-surround" },
 	{ "morhetz/gruvbox" },
@@ -262,6 +299,7 @@ require("lazy").setup({
 	plug_x_go(),
 	plug_ale(),
 	plug_lspconfig(),
+	plug_nvim_tree(),
 })
 
 -- set foldmethod for files
@@ -314,13 +352,6 @@ vim.g.python3_host_prog = "/usr/bin/python3"
 
 -- tabby configuration
 -- vim.g.tabby_keybinding_accept = '<Tab>'
-
--- Display nerdtree when enter
-vim.cmd([[
-autocmd VimEnter * NERDTree | wincmd p
-let g:NERDTreeShowHidden = 1
-let g:NERDTreeWinSize = 25
-]])
 
 vim.cmd([[autocmd FileType javascript set foldmethod=marker]])
 vim.cmd([[autocmd FileType golang set foldmethod=indent]])
