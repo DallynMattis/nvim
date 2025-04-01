@@ -1,6 +1,7 @@
 # Config Neovim  + git pour Mattis
 
-Composé du fichier de config de Neovim init.lua et gitconfig tous deux à pointer grâc à lien symbolique depuis la racine
+Composé du fichier de config de Neovim init.lua et gitconfig.
+On oubli les liens symboliques c'est mieux (ça bug avec lsp).
 
 
 ## Dépendences 
