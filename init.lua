@@ -24,7 +24,7 @@ local function plug_ale()
 			vim.g.ale_linters = {
 				-- golangci-lint calls numerous linters in the background
 				-- requires a project local config file
-				go = { "golint", "go vet", "golangci-lint", "staticcheck" },
+				go = { "golint", "go vet", "staticcheck" },
 				yaml = { "yamllint", "spectral" },
 				html = { "tidy" },
 			}
@@ -143,7 +143,7 @@ local function plug_lspconfig()
 
 				-- to support COQ snippets
 				capabilities = require("coq").lsp_ensure_capabilities(),
-
+                    
 				init_options = {
 					preferences = {
 						disableSuggestions = true,
@@ -163,8 +163,8 @@ local function plug_lspconfig()
 			require("lspconfig").bashls.setup({})
 
 			-- For Python
-
 			require("lspconfig").pylsp.setup({})
+
 			-- For Golang
 			-- see doc here https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#gopls
 			require("lspconfig").gopls.setup({
@@ -182,6 +182,9 @@ local function plug_lspconfig()
 			-- see doc here https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#jsonls
 			-- npm install -g vscode-langservers-extracted
 			require("lspconfig").jsonls.setup({})
+
+			-- For Makefile
+			require("lspconfig").autotools_ls.setup({})
 
 			-- For Lua
 			-- Install server using `brew install lua-language-server`
@@ -224,12 +227,12 @@ end
 --- }}}
 ---
 local function open_nvim_tree()
-  -- open the tree
-  if not vim.g.started_by_firenvim then
-    require("nvim-tree.api").tree.open()
-    -- do not leave focus on tree
-    vim.cmd(":wincmd w")
-  end
+	-- open the tree
+	if not vim.g.started_by_firenvim then
+		require("nvim-tree.api").tree.open()
+		-- do not leave focus on tree
+		vim.cmd(":wincmd w")
+	end
 end
 -- Display nvim-tree
 local function plug_nvim_tree()
@@ -252,18 +255,99 @@ local function plug_nvim_tree()
 					group_empty = true,
 				},
 				filters = {
-					dotfiles = true,
+					dotfiles = false,
 				},
 			})
 			-- launch at start
-            vim.api.nvim_create_autocmd({ "VimEnter" }, { callback = open_nvim_tree })
+			vim.api.nvim_create_autocmd({ "VimEnter" }, { callback = open_nvim_tree })
 		end,
+	}
+end
+
+local function plug_avente()
+	return {
+		"yetone/avante.nvim",
+		event = "VeryLazy",
+		lazy = false,
+		version = false, -- Set this to "*" to always pull the latest release version, or set it to false to update to the latest code changes.
+		opts = {
+			behaviour = {
+				auto_suggestions = false, -- Experimental stage
+			},
+			auto_suggestions_provider = "openai-llmproxy",
+			provider = "claude-llmproxy", -- Recommend using Claude
+			-- provider = "claude", -- Recommend using Claude
+			claude = {
+				endpoint = "https://api.anthropic.com",
+				model = "claude-3-5-sonnet-20241022",
+				temperature = 0,
+				max_tokens = 4096,
+			},
+			vendors = {
+				["claude-llmproxy"] = {
+					endpoint = "https://llmproxy.ai.orange",
+					__inherited_from = "openai",
+					model = "vertex_ai/claude3.5-sonnet-v2",
+					timeout = 30000, -- Timeout in milliseconds
+					temperature = 0,
+					max_tokens = 8000,
+				},
+				["openai-llmproxy"] = {
+					endpoint = "https://llmproxy.ai.orange",
+					__inherited_from = "openai",
+					model = "openai/gpt-4o-mini",
+					timeout = 30000, -- Timeout in milliseconds
+					temperature = 0,
+					max_tokens = 8000,
+				},
+			},
+		},
+		-- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
+		build = "make",
+		dependencies = {
+			"stevearc/dressing.nvim",
+			"nvim-lua/plenary.nvim",
+			"MunifTanjim/nui.nvim",
+			--- The below dependencies are optional,
+			"echasnovski/mini.pick", -- for file_selector provider mini.pick
+			"nvim-telescope/telescope.nvim", -- for file_selector provider telescope
+			"hrsh7th/nvim-cmp", -- autocompletion for avante commands and mentions
+			"ibhagwan/fzf-lua", -- for file_selector provider fzf
+			"nvim-tree/nvim-web-devicons", -- or echasnovski/mini.icons
+			"zbirenbaum/copilot.lua", -- for providers='copilot'
+			{
+				-- support for image pasting
+				"HakonHarnes/img-clip.nvim",
+				event = "VeryLazy",
+				opts = {
+					-- recommended settings
+					default = {
+						embed_image_as_base64 = false,
+						prompt_for_file_name = false,
+						drag_and_drop = {
+							insert_mode = true,
+						},
+						-- required for Windows users
+						use_absolute_path = true,
+					},
+				},
+			},
+			{
+				-- Make sure to set this up properly if you have lazy=true
+				"MeanderingProgrammer/render-markdown.nvim",
+				opts = {
+					file_types = { "markdown", "Avante" },
+				},
+				ft = { "markdown", "Avante" },
+			},
+		},
 	}
 end
 
 --
 require("lazy").setup({
 	{ "iCyMind/NeoSolarized" },
+	{ "alec-gibson/nvim-tetris" },
 	{ "nvim-treesitter/nvim-treesitter" },
 	{ "ryanoasis/vim-devicons" },
 	{ "pangloss/vim-javascript" },
@@ -300,6 +384,7 @@ require("lazy").setup({
 	plug_ale(),
 	plug_lspconfig(),
 	plug_nvim_tree(),
+	plug_avente(),
 })
 
 -- set foldmethod for files

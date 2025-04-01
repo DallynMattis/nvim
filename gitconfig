@@ -7,6 +7,7 @@
     comm = commit -m
     com  = commit
     amend= commit --amend 
+    rebasec = rebase --continue
 [core]
     pager = delta
     editor = nvim
