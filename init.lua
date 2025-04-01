@@ -344,7 +344,31 @@ local function plug_avente()
 	}
 end
 
---
+---- {{{ Adding plugin to highlight trailing whitespace
+-- https://github.com/ntpeters/vim-better-whitespace
+-- To launch manual stripping of whitespaces :
+-- :StripWhitespace
+local function plug_trailing_whitespaces()
+	return {
+		"ntpeters/vim-better-whitespace",
+		version = "*",
+		event = { "BufEnter" },
+		config = function()
+			vim.g.better_whitespace_filetypes_blacklist =
+				{ "diff", "gitcommit", "unite", "qf", "help", "mail", "startify", "git", "taskedit", "csv", "minimap" }
+			-- To highlight space characters that appear before or in-between tabs
+			vim.g.show_spaces_that_precede_tabs = 1
+			-- To enable highlighting of trailing whitespace
+			vim.g.better_whitespace_enabled = 1
+			-- Enabling stripping on save (with confirmation)
+			vim.g.strip_whitespace_on_save = 1
+			vim.g.startify_change_to_dir = 0
+			--  Note that overwriting this with a b: is ignored
+			vim.g.strip_whitespace_confirm = 0
+		end,
+	}
+end
+-- }}}
 require("lazy").setup({
 	{ "iCyMind/NeoSolarized" },
 	{ "alec-gibson/nvim-tetris" },
@@ -379,6 +403,7 @@ require("lazy").setup({
 	{ "neovim/nvim-lspconfig" },
 	{ "liuchengxu/vista.vim" },
 	{ "ms-jpq/coq_nvim" },
+	plug_trailing_whitespaces(),
 	plug_treesitter(),
 	plug_x_go(),
 	plug_ale(),
