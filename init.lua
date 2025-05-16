@@ -143,7 +143,7 @@ local function plug_lspconfig()
 
 				-- to support COQ snippets
 				capabilities = require("coq").lsp_ensure_capabilities(),
-                    
+
 				init_options = {
 					preferences = {
 						disableSuggestions = true,
@@ -401,7 +401,7 @@ require("lazy").setup({
 	{ "raghur/vim-ghost" },
 	{ "folke/which-key.nvim" },
 	{ "neovim/nvim-lspconfig" },
-	{ "liuchengxu/vista.vim" },
+	{ "liuchengxu/vista.vim" }, -- utilise librairie ctags : brew install --HEAD universal-ctags/universal-ctags/universal-ctags
 	{ "ms-jpq/coq_nvim" },
 	plug_trailing_whitespaces(),
 	plug_treesitter(),
