@@ -263,8 +263,9 @@ local function plug_nvim_tree()
 		end,
 	}
 end
-
-local function plug_avente()
+-- }}}
+-- ---- {{{ Avante : AI-powered code assistant
+local function plug_avante()
 	return {
 		"yetone/avante.nvim",
 		event = "VeryLazy",
@@ -276,29 +277,26 @@ local function plug_avente()
 			},
 			auto_suggestions_provider = "openai-llmproxy",
 			provider = "claude-llmproxy", -- Recommend using Claude
-			-- provider = "claude", -- Recommend using Claude
-			claude = {
-				endpoint = "https://api.anthropic.com",
-				model = "claude-3-5-sonnet-20241022",
-				temperature = 0,
-				max_tokens = 4096,
-			},
-			vendors = {
+			providers = {
 				["claude-llmproxy"] = {
 					endpoint = "https://llmproxy.ai.orange",
 					__inherited_from = "openai",
 					model = "vertex_ai/claude3.5-sonnet-v2",
-					timeout = 30000, -- Timeout in milliseconds
-					temperature = 0,
-					max_tokens = 8000,
+					extra_request_body = {
+						timeout_ms = 30000, -- Timeout in milliseconds
+						temperature = 0,
+						max_completion_tokens = 8000,
+					},
 				},
 				["openai-llmproxy"] = {
 					endpoint = "https://llmproxy.ai.orange",
 					__inherited_from = "openai",
 					model = "openai/gpt-4o-mini",
-					timeout = 30000, -- Timeout in milliseconds
-					temperature = 0,
-					max_tokens = 8000,
+					extra_request_body = {
+						timeout_ms = 30000, -- Timeout in milliseconds
+						temperature = 0,
+						max_completion_tokens = 8000,
+					},
 				},
 			},
 		},
@@ -343,6 +341,7 @@ local function plug_avente()
 		},
 	}
 end
+-- }}}
 
 ---- {{{ Adding plugin to highlight trailing whitespace
 -- https://github.com/ntpeters/vim-better-whitespace
@@ -388,7 +387,6 @@ require("lazy").setup({
 	{ "kshenoy/vim-signature" },
 	{ "aklt/plantuml-syntax" },
 	{ "mechatroner/rainbow_csv" },
-	{ "matveyt/neoclip" },
 	{ "tpope/vim-fugitive" },
 	{ "diepm/vim-rest-console" },
 	{ "vim-airline/vim-airline" },
@@ -409,7 +407,7 @@ require("lazy").setup({
 	plug_ale(),
 	plug_lspconfig(),
 	plug_nvim_tree(),
-	plug_avente(),
+	plug_avante(),
 })
 
 -- set foldmethod for files
