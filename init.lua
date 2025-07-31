@@ -1,4 +1,4 @@
---Installer LazyLoad
+
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
   -- bootstrap lazy.nvim
@@ -39,6 +39,7 @@ local function plug_ale()
 				html = { "prettier" },
 				vue = { "prettier" },
 				lua = { "stylua" },
+				make = { "mbake" },
 			}
 			-- key mapping to Fix the file
 		end,
@@ -428,7 +429,11 @@ require("lazy").setup({
 	{ "pangloss/vim-javascript" },
 	{ "grvcoelho/vim-javascript-snippets" },
 	{ "kshenoy/vim-signature" },
+	--- plantuml --- doc : https://github.com/weirongxu/plantuml-previewer.vim?tab=readme-ov-file
 	{ "aklt/plantuml-syntax" },
+	{ "weirongxu/plantuml-previewer.vim" },
+	{ "tyru/open-browser.vim" },
+	---
 	{ "mechatroner/rainbow_csv" },
 	{ "tpope/vim-fugitive" },
 	{ "diepm/vim-rest-console" },
@@ -452,7 +457,7 @@ require("lazy").setup({
 	plug_lspconfig(),
 	plug_nvim_tree(),
 	plug_avante(),
-	plug_noice(),
+	-- plug_noice(),
 })
 
 -- set foldmethod for files
