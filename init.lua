@@ -1,4 +1,3 @@
-
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
   -- bootstrap lazy.nvim
@@ -135,93 +134,70 @@ local function plug_lspconfig()
 		config = function()
 			vim.lsp.set_log_level("debug")
 
-			-- For JavaScript and TypeScript
-			--
-			-- See doc here : https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#tsserver
-			-- npm install -g typescript typescript-language-server
-			-- brew install coq
-			require("lspconfig").ts_ls.setup({
-
-				-- to support COQ snippets
+			-- TypeScript / JavaScript
+			vim.lsp.config("ts_ls", {
 				capabilities = require("coq").lsp_ensure_capabilities(),
-
 				init_options = {
 					preferences = {
 						disableSuggestions = true,
 					},
 				},
-				filetypes = {
-					"javascript",
-					"typescript",
-					"vue",
-				},
+				filetypes = { "javascript", "typescript", "vue" },
 			})
+			vim.lsp.enable("ts_ls")
 			vim.cmd("autocmd FileType typescript setlocal foldmethod=syntax")
 
-			-- For bash
-			-- see doc here https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#bashls
-			-- npm install -g bash-language-server
-			require("lspconfig").bashls.setup({})
+			-- Bash
+			vim.lsp.config("bashls", {})
+			vim.lsp.enable("bashls")
 
-			-- For Python
-			require("lspconfig").pylsp.setup({})
+			-- Python
+			vim.lsp.config("pylsp", {})
+			vim.lsp.enable("pylsp")
 
-			-- For Golang
-			-- see doc here https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#gopls
-			require("lspconfig").gopls.setup({
+			-- Go
+			vim.lsp.config("gopls", {
 				settings = {
 					gopls = {
-						analyses = {
-							unusedparams = true,
-						},
+						analyses = { unusedparams = true },
 						staticcheck = true,
 						gofumpt = true,
 					},
 				},
 			})
-			-- For JSON
-			-- see doc here https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#jsonls
-			-- npm install -g vscode-langservers-extracted
-			require("lspconfig").jsonls.setup({})
+			vim.lsp.enable("gopls")
 
-			-- For Makefile
-			require("lspconfig").autotools_ls.setup({})
+			-- Makefile
+			vim.lsp.config("autotools_ls", {})
+			vim.lsp.enable("autotools_ls")
 
-			-- For Lua
-			-- Install server using `brew install lua-language-server`
-			-- See setup config here https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#lua_ls
-			require("lspconfig").lua_ls.setup({
+			-- JSON
+			vim.lsp.config("jsonls", {})
+			vim.lsp.enable("jsonls")
+
+			-- Lua
+			vim.lsp.config("lua_ls", {
 				on_init = function(client)
 					local path = client.workspace_folders[1].name
 					if
-						not vim.loop.fs_stat(path .. "/.luarc.json") and not vim.loop.fs_stat(path .. "/.luarc.jsonc")
+						not vim.loop.fs_stat(path .. "/.luarc.json")
+						and not vim.loop.fs_stat(path .. "/.luarc.jsonc")
 					then
 						client.config.settings = vim.tbl_deep_extend("force", client.config.settings, {
 							Lua = {
-								runtime = {
-									-- Tell the language server which version of Lua you're using
-									-- (most likely LuaJIT in the case of Neovim)
-									version = "LuaJIT",
-								},
-								-- Make the server aware of Neovim runtime files
+								runtime = { version = "LuaJIT" },
 								workspace = {
 									checkThirdParty = false,
-									library = {
-										vim.env.VIMRUNTIME,
-										-- "${3rd}/luv/library"
-										-- "${3rd}/busted/library",
-									},
-									-- or pull in all of 'runtimepath'. NOTE: this is a lot slower
-									-- library = vim.api.nvim_get_runtime_file("", true)
+									library = { vim.env.VIMRUNTIME },
 								},
 							},
 						})
-
 						client.notify("workspace/didChangeConfiguration", { settings = client.config.settings })
 					end
 					return true
 				end,
 			})
+			vim.lsp.enable("lua_ls")
 		end,
 	}
 end
@@ -265,26 +241,27 @@ local function plug_nvim_tree()
 	}
 end
 -- }}}
--- ---- {{{ Avante : AI-powered code assistant
+
+-- {{{ Avante : AI-powered code assistant
 local function plug_avante()
 	return {
 		"yetone/avante.nvim",
 		event = "VeryLazy",
 		lazy = false,
-		version = false, -- Set this to "*" to always pull the latest release version, or set it to false to update to the latest code changes.
+		version = false,
 		opts = {
 			behaviour = {
-				auto_suggestions = false, -- Experimental stage
+				auto_suggestions = false,
 			},
 			auto_suggestions_provider = "openai-llmproxy",
-			provider = "claude-llmproxy", -- Recommend using Claude
+			provider = "claude-llmproxy",
 			providers = {
 				["claude-llmproxy"] = {
 					endpoint = "https://llmproxy.ai.orange",
 					__inherited_from = "openai",
 					model = "vertex_ai/claude3.5-sonnet-v2",
 					extra_request_body = {
-						timeout_ms = 30000, -- Timeout in milliseconds
+						timeout_ms = 30000,
 						temperature = 0,
 						max_completion_tokens = 8000,
 					},
@@ -294,45 +271,39 @@ local function plug_avante()
 					__inherited_from = "openai",
 					model = "openai/gpt-4o-mini",
 					extra_request_body = {
-						timeout_ms = 30000, -- Timeout in milliseconds
+						timeout_ms = 30000,
 						temperature = 0,
 						max_completion_tokens = 8000,
 					},
 				},
 			},
 		},
-		-- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
 		build = "make",
 		dependencies = {
 			"stevearc/dressing.nvim",
 			"nvim-lua/plenary.nvim",
 			"MunifTanjim/nui.nvim",
-			--- The below dependencies are optional,
-			"echasnovski/mini.pick", -- for file_selector provider mini.pick
-			"nvim-telescope/telescope.nvim", -- for file_selector provider telescope
-			"hrsh7th/nvim-cmp", -- autocompletion for avante commands and mentions
-			"ibhagwan/fzf-lua", -- for file_selector provider fzf
-			"nvim-tree/nvim-web-devicons", -- or echasnovski/mini.icons
-			"zbirenbaum/copilot.lua", -- for providers='copilot'
+			"echasnovski/mini.pick",
+			"nvim-telescope/telescope.nvim",
+			"hrsh7th/nvim-cmp",
+			"ibhagwan/fzf-lua",
+			"nvim-tree/nvim-web-devicons",
+			"zbirenbaum/copilot.lua",
 			{
-				-- support for image pasting
 				"HakonHarnes/img-clip.nvim",
 				event = "VeryLazy",
 				opts = {
-					-- recommended settings
 					default = {
 						embed_image_as_base64 = false,
 						prompt_for_file_name = false,
 						drag_and_drop = {
 							insert_mode = true,
 						},
-						-- required for Windows users
 						use_absolute_path = true,
 					},
 				},
 			},
 			{
-				-- Make sure to set this up properly if you have lazy=true
 				"MeanderingProgrammer/render-markdown.nvim",
 				opts = {
 					file_types = { "markdown", "Avante" },
@@ -344,10 +315,8 @@ local function plug_avante()
 end
 -- }}}
 
----- {{{ Adding plugin to highlight trailing whitespace
+-- {{{ vim-better-whitespace
 -- https://github.com/ntpeters/vim-better-whitespace
--- To launch manual stripping of whitespaces :
--- :StripWhitespace
 local function plug_trailing_whitespaces()
 	return {
 		"ntpeters/vim-better-whitespace",
@@ -356,62 +325,48 @@ local function plug_trailing_whitespaces()
 		config = function()
 			vim.g.better_whitespace_filetypes_blacklist =
 				{ "diff", "gitcommit", "unite", "qf", "help", "mail", "startify", "git", "taskedit", "csv", "minimap" }
-			-- To highlight space characters that appear before or in-between tabs
 			vim.g.show_spaces_that_precede_tabs = 1
-			-- To enable highlighting of trailing whitespace
 			vim.g.better_whitespace_enabled = 1
-			-- Enabling stripping on save (with confirmation)
 			vim.g.strip_whitespace_on_save = 1
 			vim.g.startify_change_to_dir = 0
-			--  Note that overwriting this with a b: is ignored
 			vim.g.strip_whitespace_confirm = 0
 		end,
 	}
 end
 -- }}}
--- {{{
--- -- lazy.nvim
+
+-- {{{ Noice
 local function plug_noice()
-	-- Noice.nvim is a highly customizable notification system for Neovim.
-	-- It provides a way to display messages, notifications, and other information in a more user-friendly way.
-	-- See:
 	return {
 		"folke/noice.nvim",
 		event = "VeryLazy",
-		opts = {
-			-- add any options here
-		},
+		opts = {},
 		config = function()
 			require("noice").setup({
 				lsp = {
-					-- override markdown rendering so that **cmp** and other plugins use **Treesitter**
 					override = {
 						["vim.lsp.util.convert_input_to_markdown_lines"] = true,
 						["vim.lsp.util.stylize_markdown"] = true,
-						["cmp.entry.get_documentation"] = true, -- requires hrsh7th/nvim-cmp
+						["cmp.entry.get_documentation"] = true,
 					},
 				},
-				-- you can enable a preset for easier configuration
 				presets = {
-					bottom_search = true, -- use a classic bottom cmdline for search
-					command_palette = true, -- position the cmdline and popupmenu together
-					long_message_to_split = true, -- long messages will be sent to a split
-					inc_rename = false, -- enables an input dialog for inc-rename.nvim
-					lsp_doc_border = false, -- add a border to hover docs and signature help
+					bottom_search = true,
+					command_palette = true,
+					long_message_to_split = true,
+					inc_rename = false,
+					lsp_doc_border = false,
 				},
 			})
 		end,
 		dependencies = {
-			-- if you lazy-load any plugin below, make sure to add proper `module="..."` entries
 			"MunifTanjim/nui.nvim",
-			-- OPTIONAL:
-			--   `nvim-notify` is only needed, if you want to use the notification view.
-			--   If not available, we use `mini` as the fallback
 			"rcarriga/nvim-notify",
 		},
 	}
 end
 -- }}}
+
 require("lazy").setup({
 	{ "iCyMind/NeoSolarized" },
 	{ "alec-gibson/nvim-tetris" },
@@ -429,11 +384,9 @@ require("lazy").setup({
 	{ "pangloss/vim-javascript" },
 	{ "grvcoelho/vim-javascript-snippets" },
 	{ "kshenoy/vim-signature" },
-	--- plantuml --- doc : https://github.com/weirongxu/plantuml-previewer.vim?tab=readme-ov-file
 	{ "aklt/plantuml-syntax" },
 	{ "weirongxu/plantuml-previewer.vim" },
 	{ "tyru/open-browser.vim" },
-	---
 	{ "mechatroner/rainbow_csv" },
 	{ "tpope/vim-fugitive" },
 	{ "diepm/vim-rest-console" },
@@ -442,11 +395,10 @@ require("lazy").setup({
 	{ "ap/vim-css-color" },
 	{ "honza/vim-snippets" },
 	{ "jiangmiao/auto-pairs" },
-	{ "github/copilot.vim" },
+	--{ "github/copilot.vim" },
 	{ "rebelot/kanagawa.nvim" },
 	{ "raghur/vim-ghost" },
 	{ "folke/which-key.nvim" },
-	{ "neovim/nvim-lspconfig" },
 	{ "liuchengxu/vista.vim" }, -- utilise librairie ctags : brew install --HEAD universal-ctags/universal-ctags/universal-ctags
 	{ "ravitemer/mcphub.nvim" },
 	{ "ms-jpq/coq_nvim" },
@@ -461,7 +413,6 @@ require("lazy").setup({
 })
 
 -- set foldmethod for files
--- Set default foldmethod to 'indent'
 vim.opt.foldmethod = "indent"
 
 --Airline display configuration
@@ -508,9 +459,6 @@ vim.cmd("set nocompatible")
 --python3
 vim.g.python3_host_prog = "/usr/bin/python3"
 
--- tabby configuration
--- vim.g.tabby_keybinding_accept = '<Tab>'
-
 vim.cmd([[autocmd FileType javascript set foldmethod=marker]])
 vim.cmd([[autocmd FileType golang set foldmethod=indent]])
 
@@ -523,7 +471,6 @@ vim.api.nvim_set_keymap("v", "//", 'y/<C-R>"<CR>', { noremap = true })
 -- Copier vers le presse-papiers système
 vim.api.nvim_set_keymap("n", "<C-c>", '"+y', { noremap = true, silent = true })
 vim.api.nvim_set_keymap("v", "<C-c>", '"+y', { noremap = true, silent = true })
-
 -- Allow clearing of searched text using ///
 vim.api.nvim_set_keymap("n", "///", ":nohl<CR>", { noremap = true })
 
@@ -534,8 +481,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
 		-- Enable completion triggered by <c-x><c-o>
 		vim.bo[ev.buf].omnifunc = "v:lua.vim.lsp.omnifunc"
 
-		-- Buffer local mappings.
-		-- See `:help vim.lsp.*` for documentation on any of the below functions
 		local wk = require("which-key")
 		-- g prefix
 		wk.add({ { "gd", "<cmd>lua vim.lsp.buf.definition()<cr>", desc = "LSP Goto Definition" } })
