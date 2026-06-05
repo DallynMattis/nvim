@@ -1,4 +1,4 @@
-# Config Neovim  + git pour Mattis
+# Config Neovim  + git + ZSH pour Mattis
 
 Composé du fichier de config de Neovim init.lua et gitconfig.
 On oubli les liens symboliques c'est mieux (ça bug avec lsp).
@@ -15,4 +15,4 @@ On oubli les liens symboliques c'est mieux (ça bug avec lsp).
     brew install git-delta
     ```
         Plugin qui sert à améliorer la lecture des différences git en ajoutant de la couleur principalement
-        
+

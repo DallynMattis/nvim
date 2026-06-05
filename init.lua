@@ -1,574 +1,566 @@
+-- ============================================================
+--  NEOVIM CONFIG — init.lua
+--  lazy.nvim est le gestionnaire de plugins : il installe et charge tout
+-- ============================================================
+
+-- {{{ Bootstrap lazy.nvim
+-- Si lazy.nvim n'est pas installé, on le télécharge automatiquement
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-if not vim.loop.fs_stat(lazypath) then
-  -- bootstrap lazy.nvim
-  -- stylua: ignore
-  vim.fn.system({ "git", "clone", "--filter=blob:none", "https://github.com/folke/lazy.nvim.git", "--branch=stable", lazypath })
+if not vim.uv.fs_stat(lazypath) then
+  vim.fn.system({
+    "git", "clone", "--filter=blob:none",
+    "https://github.com/folke/lazy.nvim.git",
+    "--branch=stable", lazypath,
+  })
 end
 vim.opt.rtp:prepend(vim.env.LAZY or lazypath)
+-- }}}
 
--- {{{ ALE : Asynchronous Lint Engine
--- Linter.
--- see : https://github.com/dense-analysis/ale
--- Usage : :ALEFix to make Prettier fix the file
---   see g:ale_fixers below
+-- ============================================================
+--  DÉFINITIONS DES PLUGINS
+--  Chaque plug_xxx() retourne la configuration d'un plugin
+-- ============================================================
+
+-- {{{ ALE — formate le code à la sauvegarde (prettier, stylua...) et détecte les erreurs
+-- Usage : :ALEFix  →  forcer le formatage maintenant
+-- ale_disable_lsp = 1 : évite les doublons car LSP détecte déjà les erreurs
 local function plug_ale()
-	-- Enable automatic fixing on save
-	vim.g.ale_fix_on_save = 1
-	-- define a new alias ":Prettier" as an alias to ALEFix
-	vim.cmd('command! -nargs=0 Prettier echo "Use :ALEFix"')
-	return {
-		"dense-analysis/ale",
-		ft = "typescript,json,yaml,markdown,css,scss,html,vue,lua,go",
-		config = function()
-			vim.g.ale_linters = {
-				-- golangci-lint calls numerous linters in the background
-				-- requires a project local config file
-				go = { "golint", "go vet", "staticcheck" },
-				yaml = { "yamllint", "spectral" },
-				html = { "tidy" },
-			}
-			vim.g.ale_fixers = {
-				typescript = { "prettier" },
-				javascript = { "prettier" },
-				json = { "prettier" },
-				yaml = { "prettier" },
-				markdown = { "prettier" },
-				css = { "prettier" },
-				scss = { "prettier" },
-				html = { "prettier" },
-				vue = { "prettier" },
-				lua = { "stylua" },
-				make = { "mbake" },
-			}
-			-- key mapping to Fix the file
-		end,
-	}
+  vim.g.ale_fix_on_save = 1
+  vim.g.ale_disable_lsp = 1
+  return {
+    "dense-analysis/ale",
+    ft     = "typescript,javascript,json,yaml,markdown,css,scss,html,vue,lua,go",
+    config = function()
+      -- Outil de vérification par langage
+      vim.g.ale_linters = {
+        go   = { "golangci-lint", "gofmt" },
+        yaml = { "yamllint", "spectral" },
+        html = { "tidy" },
+      }
+      -- Outil de formatage par langage
+      vim.g.ale_fixers = {
+        typescript = { "prettier" },
+        javascript = { "prettier" },
+        json       = { "prettier" },
+        yaml       = { "prettier" },
+        markdown   = { "prettier" },
+        css        = { "prettier" },
+        scss       = { "prettier" },
+        html       = { "prettier" },
+        vue        = { "prettier" },
+        lua        = { "stylua" },
+      }
+    end,
+  }
 end
 -- }}}
 
--- {{{ Plugin to support Go Language (golang)
--- https://github.com/ray-x/go.nvim
--- Replaces fatih/vim-go written in vimscript mostly
--- Rem : needs to install a tree-sitter parser
---`:TSInstallSync go`
--- For debugging, see https://github.com/mfussenegger/nvim-dap
+-- {{{ go.nvim — support complet du langage Go (imports auto, tests, refacto...)
+-- Se charge uniquement quand tu ouvres un fichier .go ou go.mod
+-- Le formatage à la sauvegarde est géré par gopls (LSP) pour éviter le double format
 local function plug_x_go()
-	return {
-		"ray-x/go.nvim",
-		dependencies = { -- optional packages
-			"ray-x/guihua.lua",
-			"neovim/nvim-lspconfig",
-			"nvim-treesitter/nvim-treesitter",
-		},
-		config = function()
-			require("go").setup()
-			-- foldmethod
-			vim.cmd("autocmd FileType go setlocal foldmethod=indent")
-
-			-- Run gofmt on save
-			local format_sync_grp = vim.api.nvim_create_augroup("GoFormat", {})
-			vim.api.nvim_create_autocmd("BufWritePre", {
-				pattern = "*.go",
-				callback = function()
-					require("go.format").gofmt()
-				end,
-				group = format_sync_grp,
-			})
-		end,
-		ft = { "go", "gomod" }, -- Lazy load on filetype go
-		build = ':lua require("go.install").update_all_sync()', -- if you need to install/update all binaries
-	}
+  return {
+    "ray-x/go.nvim",
+    ft           = { "go", "gomod" },
+    build        = ':lua require("go.install").update_all_sync()',
+    dependencies = {
+      "ray-x/guihua.lua",
+      "neovim/nvim-lspconfig",
+      "nvim-treesitter/nvim-treesitter",
+    },
+    config = function()
+      require("go").setup()
+      vim.cmd("autocmd FileType go setlocal foldmethod=indent")
+    end,
+  }
 end
--- }}}/!\ IMPORTANT
--- {{{ Treesitter : syntax highlighter
--- see : https://github.com/nvim-treesitter/nvim-treesitter
--- TSInstallInfo Pour voir les langages installés pour les highlighters
--- Usage : TSInstall <language> pour installer un highlighter
--- Puis : TSEnable highlight pour activer le highlighter
--- :TSUpdate all
+-- }}}
+
+-- {{{ Treesitter — comprend vraiment la syntaxe du code → meilleure colorisation qu'un simple regex
+-- Usage : :TSInstall <langage>  pour ajouter un langage  |  :TSUpdate all  pour tout mettre à jour
 local function plug_treesitter()
-	return {
-		"nvim-treesitter/nvim-treesitter",
-		event = "BufRead",
-		config = function()
-			require("nvim-treesitter.configs").setup({
-				-- A list of parser names, or "all" (the five listed parsers should always be installed)
-				ensure_installed = { "lua", "go" },
-				-- Automatically install missing parsers when entering buffer
-				-- Recommendation: set to false if you don't have `tree-sitter` CLI installed locally
-				auto_install = false,
-				-- List of parsers to ignore installing (or "all")
-				ignore_install = {},
-				-- Install parsers synchronously (only applied to `ensure_installed`)
-				sync_install = true,
-				highlight = {
-					enable = true,
-				},
-				-- indent = {
-				--   enable = true
-				-- },
-				incremental_selection = {
-					enable = true,
-					keymaps = {
-						init_selection = "<CR>", -- set to `false` to disable one of the mappings
-						scope_incremental = "<CR>",
-						node_incremental = "<TAB>",
-						node_decremental = "<S-TAB>",
-					},
-				},
-				modules = {},
-			})
-		end,
-	}
+  return {
+    "nvim-treesitter/nvim-treesitter",
+    event  = "BufRead",
+    build  = ":TSUpdate",
+    config = function()
+      require("nvim-treesitter.configs").setup({
+        ensure_installed = { "lua", "go", "javascript", "typescript", "bash", "json", "yaml" },
+        auto_install     = true,   -- installe le parser automatiquement quand tu ouvres un nouveau type de fichier
+        sync_install     = false,
+        ignore_install   = {},
+        highlight        = { enable = true },
+        incremental_selection = {
+          enable  = true,
+          keymaps = {
+            init_selection    = "<CR>",    -- commence la sélection
+            scope_incremental = "<CR>",    -- étend au scope suivant
+            node_incremental  = "<TAB>",   -- étend au bloc parent
+            node_decremental  = "<S-TAB>", -- réduit au bloc enfant
+          },
+        },
+        modules = {},
+      })
+    end,
+  }
 end
---}}}
--- {{{ LSP config
--- https://github.com/neovim/nvim-lspconfig
--- See : LspInfo
+-- }}}
+
+-- {{{ LSP — le cerveau de l'éditeur : autocomplétion, erreurs en direct, "aller à la définition"
+-- Usage : :LspInfo  →  voir quels serveurs sont actifs sur le fichier courant
+--
+-- Installer les serveurs de langage (une seule fois, sur la machine) :
+--   JS/TS   : npm install -g typescript typescript-language-server
+--   Bash    : npm install -g bash-language-server
+--   JSON    : npm install -g vscode-langservers-extracted
+--   Lua     : brew install lua-language-server
+--   Go      : go install golang.org/x/tools/gopls@latest
 local function plug_lspconfig()
-	return {
-		"neovim/nvim-lspconfig",
-		opts = {
-			inlay_hints = { enabled = true },
-		},
-		config = function()
-			vim.lsp.set_log_level("debug")
+  return {
+    "neovim/nvim-lspconfig",
+    opts   = { inlay_hints = { enabled = true } }, -- affiche des hints discrets dans le code (types, noms de params...)
+    config = function()
 
-			-- For JavaScript and TypeScript
-			--
-			-- See doc here : https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#tsserver
-			-- npm install -g typescript typescript-language-server
-			-- brew install coq
-			vim.lsp.config("ts_ls", {
-				-- to support COQ snippets
-				capabilities = require("coq").lsp_ensure_capabilities(),
-				init_options = {
-					preferences = {
-						disableSuggestions = true,
-					},
-				},
-				filetypes = {
-					"javascript",
-					"typescript",
-					"vue",
-				},
-			})
-			vim.lsp.enable("ts_ls")
-			vim.cmd("autocmd FileType typescript setlocal foldmethod=syntax")
+      -- Serveur pour JavaScript, TypeScript et Vue
+      vim.lsp.config("ts_ls", {
+        capabilities = require("coq").lsp_ensure_capabilities(), -- branche l'autocomplétion COQ
+        init_options = { preferences = { disableSuggestions = true } },
+        filetypes    = { "javascript", "typescript", "vue" },
+      })
+      vim.lsp.enable("ts_ls")
+      vim.cmd("autocmd FileType typescript setlocal foldmethod=syntax")
 
-			-- For bash
-			-- see doc here https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#bashls
-			-- npm install -g bash-language-server
-			vim.lsp.config("bashls", {})
-			vim.lsp.enable("bashls")
+      -- Serveur pour les scripts Bash
+      vim.lsp.config("bashls", {})
+      vim.lsp.enable("bashls")
 
-			-- For Python
-			vim.lsp.config("pylsp", {})
-			vim.lsp.enable("pylsp")
+      -- Serveur pour Python
+      vim.lsp.config("pylsp", {})
+      vim.lsp.enable("pylsp")
 
-			-- For Golang
-			-- see doc here https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#gopls
-			vim.lsp.config("gopls", {
-				settings = {
-					gopls = {
-						analyses = {
-							unusedparams = true,
-						},
-						staticcheck = true,
-						gofumpt = true,
-					},
-				},
-			})
-			vim.lsp.enable("gopls")
+      -- Serveur pour Go — active le formatage strict (gofumpt) et l'analyse statique (staticcheck)
+      vim.lsp.config("gopls", {
+        settings = {
+          gopls = {
+            analyses    = { unusedparams = true }, -- signale les paramètres de fonctions inutilisés
+            staticcheck = true,
+            gofumpt     = true,                    -- formatage plus strict que gofmt standard
+          },
+        },
+      })
+      vim.lsp.enable("gopls")
 
-			-- For JSON
-			-- see doc here https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#jsonls
-			-- npm install -g vscode-langservers-extracted
-			vim.lsp.config("jsonls", {})
-			vim.lsp.enable("jsonls")
+      -- Serveur pour JSON
+      vim.lsp.config("jsonls", {})
+      vim.lsp.enable("jsonls")
 
-			-- For Makefile
-			vim.lsp.config("autotools_ls", {})
-			vim.lsp.enable("autotools_ls")
+      -- Serveur pour les Makefile
+      vim.lsp.config("autotools_ls", {})
+      vim.lsp.enable("autotools_ls")
 
-			-- For Lua
-			-- Install server using `brew install lua-language-server`
-			-- See setup config here https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#lua_ls
-			vim.lsp.config("lua_ls", {
-				on_init = function(client)
-					local path = client.workspace_folders[1].name
-					if
-						not vim.loop.fs_stat(path .. "/.luarc.json") and not vim.loop.fs_stat(path .. "/.luarc.jsonc")
-					then
-						client.config.settings = vim.tbl_deep_extend("force", client.config.settings, {
-							Lua = {
-								runtime = {
-									-- Tell the language server which version of Lua you're using
-									-- (most likely LuaJIT in the case of Neovim)
-									version = "LuaJIT",
-								},
-								-- Make the server aware of Neovim runtime files
-								workspace = {
-									checkThirdParty = false,
-									library = {
-										vim.env.VIMRUNTIME,
-										-- "${3rd}/luv/library"
-										-- "${3rd}/busted/library",
-									},
-									-- or pull in all of 'runtimepath'. NOTE: this is a lot slower
-									-- library = vim.api.nvim_get_runtime_file("", true)
-								},
-							},
-						})
-						client.notify("workspace/didChangeConfiguration", { settings = client.config.settings })
-					end
-					return true
-				end,
-			})
-			vim.lsp.enable("lua_ls")
-		end,
-	}
+      -- Serveur pour Lua — configuré pour reconnaître l'environnement Neovim (vim.*, etc.)
+      vim.lsp.config("lua_ls", {
+        on_init = function(client)
+          local path = client.workspace_folders[1].name
+          if not vim.uv.fs_stat(path .. "/.luarc.json") and not vim.uv.fs_stat(path .. "/.luarc.jsonc") then
+            client.config.settings = vim.tbl_deep_extend("force", client.config.settings, {
+              Lua = {
+                runtime   = { version = "LuaJIT" },
+                workspace = {
+                  checkThirdParty = false,
+                  library         = { vim.env.VIMRUNTIME }, -- donne accès aux APIs Neovim
+                },
+              },
+            })
+            client.notify("workspace/didChangeConfiguration", { settings = client.config.settings })
+          end
+          return true
+        end,
+      })
+      vim.lsp.enable("lua_ls")
+    end,
+  }
 end
---- }}}
----
-local function open_nvim_tree()
-	-- open the tree
-	if not vim.g.started_by_firenvim then
-		require("nvim-tree.api").tree.open()
-		-- do not leave focus on tree
-		vim.cmd(":wincmd w")
-	end
-end
--- Display nvim-tree
+-- }}}
+
+-- {{{ nvim-tree — arbre de fichiers sur la gauche, s'ouvre automatiquement au démarrage
 local function plug_nvim_tree()
-	return {
-		"nvim-tree/nvim-tree.lua",
-		version = "*",
-		lazy = false,
-		dependencies = {
-			"nvim-tree/nvim-web-devicons",
-		},
-		config = function()
-			require("nvim-tree").setup({
-				sort = {
-					sorter = "case_sensitive",
-				},
-				view = {
-					width = 30,
-				},
-				renderer = {
-					group_empty = true,
-				},
-				filters = {
-					dotfiles = false,
-				},
-			})
-			-- launch at start
-			vim.api.nvim_create_autocmd({ "VimEnter" }, { callback = open_nvim_tree })
-		end,
-	}
+  -- Ouvre l'arbre mais remet le focus sur la fenêtre d'édition (pas sur l'arbre)
+  local function open_on_start()
+    if not vim.g.started_by_firenvim then
+      require("nvim-tree.api").tree.open()
+      vim.cmd(":wincmd w")
+    end
+  end
+
+  return {
+    "nvim-tree/nvim-tree.lua",
+    version      = "*",
+    lazy         = false,
+    dependencies = { "nvim-tree/nvim-web-devicons" }, -- icônes de fichiers colorées
+    config       = function()
+      require("nvim-tree").setup({
+        sort     = { sorter = "case_sensitive" },
+        view     = { width = 30 },
+        renderer = { group_empty = true },  -- regroupe les dossiers vides sur une ligne
+        filters  = { dotfiles = false },    -- affiche les fichiers cachés (.env, .gitignore...)
+      })
+      vim.api.nvim_create_autocmd("VimEnter", { callback = open_on_start })
+    end,
+  }
 end
 -- }}}
 
--- ---- {{{ Avante : AI-powered code assistant
-local function plug_avante()
-	return {
-		"yetone/avante.nvim",
-		event = "VeryLazy",
-		lazy = false,
-		version = false, -- Set this to "*" to always pull the latest release version, or set it to false to update to the latest code changes.
-		opts = {
-			behaviour = {
-				auto_suggestions = false, -- Experimental stage
-			},
-			auto_suggestions_provider = "openai-llmproxy",
-			provider = "claude-llmproxy", -- Recommend using Claude
-			providers = {
-				["claude-llmproxy"] = {
-					endpoint = "https://llmproxy.ai.orange",
-					__inherited_from = "openai",
-					model = "vertex_ai/claude3.5-sonnet-v2",
-					extra_request_body = {
-						timeout_ms = 30000, -- Timeout in milliseconds
-						temperature = 0,
-						max_completion_tokens = 8000,
-					},
-				},
-				["openai-llmproxy"] = {
-					endpoint = "https://llmproxy.ai.orange",
-					__inherited_from = "openai",
-					model = "openai/gpt-4o-mini",
-					extra_request_body = {
-						timeout_ms = 30000, -- Timeout in milliseconds
-						temperature = 0,
-						max_completion_tokens = 8000,
-					},
-				},
-			},
-		},
-		-- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
-		build = "make",
-		dependencies = {
-			"stevearc/dressing.nvim",
-			"nvim-lua/plenary.nvim",
-			"MunifTanjim/nui.nvim",
-			--- The below dependencies are optional,
-			"echasnovski/mini.pick", -- for file_selector provider mini.pick
-			"nvim-telescope/telescope.nvim", -- for file_selector provider telescope
-			"hrsh7th/nvim-cmp", -- autocompletion for avante commands and mentions
-			"ibhagwan/fzf-lua", -- for file_selector provider fzf
-			"nvim-tree/nvim-web-devicons", -- or echasnovski/mini.icons
-			"zbirenbaum/copilot.lua", -- for providers='copilot'
-			{
-				-- support for image pasting
-				"HakonHarnes/img-clip.nvim",
-				event = "VeryLazy",
-				opts = {
-					-- recommended settings
-					default = {
-						embed_image_as_base64 = false,
-						prompt_for_file_name = false,
-						drag_and_drop = {
-							insert_mode = true,
-						},
-						-- required for Windows users
-						use_absolute_path = true,
-					},
-				},
-			},
-			{
-				-- Make sure to set this up properly if you have lazy=true
-				"MeanderingProgrammer/render-markdown.nvim",
-				opts = {
-					file_types = { "markdown", "Avante" },
-				},
-				ft = { "markdown", "Avante" },
-			},
-		},
-	}
-end
--- }}}
-
----- {{{ Adding plugin to highlight trailing whitespace
--- https://github.com/ntpeters/vim-better-whitespace
--- To launch manual stripping of whitespaces :
--- :StripWhitespace
+-- {{{ vim-better-whitespace — surligne les espaces inutiles en fin de ligne et les supprime à la sauvegarde
+-- Usage : :StripWhitespace  →  nettoyer manuellement sans sauvegarder
 local function plug_trailing_whitespaces()
-	return {
-		"ntpeters/vim-better-whitespace",
-		version = "*",
-		event = { "BufEnter" },
-		config = function()
-			vim.g.better_whitespace_filetypes_blacklist =
-				{ "diff", "gitcommit", "unite", "qf", "help", "mail", "startify", "git", "taskedit", "csv", "minimap" }
-			-- To highlight space characters that appear before or in-between tabs
-			vim.g.show_spaces_that_precede_tabs = 1
-			-- To enable highlighting of trailing whitespace
-			vim.g.better_whitespace_enabled = 1
-			-- Enabling stripping on save (with confirmation)
-			vim.g.strip_whitespace_on_save = 1
-			vim.g.startify_change_to_dir = 0
-			--  Note that overwriting this with a b: is ignored
-			vim.g.strip_whitespace_confirm = 0
-		end,
-	}
+  return {
+    "ntpeters/vim-better-whitespace",
+    version = "*",
+    event   = "BufEnter",
+    config  = function()
+      -- Désactivé dans ces types de fichiers (ils ont leurs propres règles d'espacement)
+      vim.g.better_whitespace_filetypes_blacklist =
+        { "diff", "gitcommit", "unite", "qf", "help", "mail", "startify", "git", "taskedit", "csv" }
+      vim.g.show_spaces_that_precede_tabs = 1  -- signale aussi les espaces avant les tabs
+      vim.g.better_whitespace_enabled     = 1
+      vim.g.strip_whitespace_on_save      = 1  -- nettoyage automatique à chaque sauvegarde
+      vim.g.strip_whitespace_confirm      = 0  -- sans demander confirmation
+      vim.g.startify_change_to_dir        = 0
+    end,
+  }
 end
 -- }}}
 
--- {{{
--- -- lazy.nvim
+-- {{{ noice.nvim — remplace la barre de commande et les notifs par des fenêtres flottantes modernes
 local function plug_noice()
-	-- Noice.nvim is a highly customizable notification system for Neovim.
-	-- It provides a way to display messages, notifications, and other information in a more user-friendly way.
-	-- See:
-	return {
-		"folke/noice.nvim",
-		event = "VeryLazy",
-		opts = {
-			-- add any options here
-		},
-		config = function()
-			require("noice").setup({
-				lsp = {
-					-- override markdown rendering so that **cmp** and other plugins use **Treesitter**
-					override = {
-						["vim.lsp.util.convert_input_to_markdown_lines"] = true,
-						["vim.lsp.util.stylize_markdown"] = true,
-						["cmp.entry.get_documentation"] = true, -- requires hrsh7th/nvim-cmp
-					},
-				},
-				-- you can enable a preset for easier configuration
-				presets = {
-					bottom_search = true, -- use a classic bottom cmdline for search
-					command_palette = true, -- position the cmdline and popupmenu together
-					long_message_to_split = true, -- long messages will be sent to a split
-					inc_rename = false, -- enables an input dialog for inc-rename.nvim
-					lsp_doc_border = false, -- add a border to hover docs and signature help
-				},
-			})
-		end,
-		dependencies = {
-			-- if you lazy-load any plugin below, make sure to add proper `module="..."` entries
-			"MunifTanjim/nui.nvim",
-			-- OPTIONAL:
-			--   `nvim-notify` is only needed, if you want to use the notification view.
-			--   If not available, we use `mini` as the fallback
-			"rcarriga/nvim-notify",
-		},
-	}
+  return {
+    "folke/noice.nvim",
+    event        = "VeryLazy",
+    dependencies = { "MunifTanjim/nui.nvim", "rcarriga/nvim-notify" },
+    config       = function()
+      require("noice").setup({
+        lsp = {
+          -- Utilise Treesitter pour rendre la doc LSP plus jolie
+          override = {
+            ["vim.lsp.util.convert_input_to_markdown_lines"] = true,
+            ["vim.lsp.util.stylize_markdown"]                = true,
+          },
+        },
+        presets = {
+          bottom_search         = true,  -- barre de recherche reste en bas (comportement classique)
+          command_palette       = true,  -- cmdline + suggestions affichées ensemble
+          long_message_to_split = true,  -- les longs messages s'ouvrent dans un split plutôt qu'une popup
+        },
+      })
+    end,
+  }
 end
 -- }}}
 
+-- {{{ lualine — barre de statut en bas (mode, branche git, fichier, erreurs, position...)
+local function plug_lualine()
+  return {
+    "nvim-lualine/lualine.nvim",
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+    config       = function()
+      require("lualine").setup({
+        options = {
+          theme                = "auto",  -- s'adapte automatiquement au colorscheme actif
+          component_separators = { left = "", right = "" },
+          section_separators   = { left = "", right = "" },
+        },
+        sections = {
+          lualine_a = { "mode" },                           -- NORMAL / INSERT / VISUAL...
+          lualine_b = { "branch", "diff", "diagnostics" },  -- branche git + lignes modifiées + erreurs LSP
+          lualine_c = { { "filename", path = 1 } },         -- chemin relatif du fichier ouvert
+          lualine_x = { "encoding", "fileformat", "filetype" },
+          lualine_y = { "progress" },                       -- % de progression dans le fichier
+          lualine_z = { "location" },                       -- ligne:colonne
+        },
+        tabline = {
+          lualine_a = { "buffers" }, -- tous les buffers ouverts affichés tout en haut
+          lualine_z = { "tabs" },
+        },
+      })
+    end,
+  }
+end
+-- }}}
+
+-- {{{ gitsigns — montre en temps réel les lignes modifiées/ajoutées/supprimées + qui a écrit chaque ligne
+local function plug_gitsigns()
+  return {
+    "lewis6991/gitsigns.nvim",
+    event  = "BufRead",
+    config = function()
+      require("gitsigns").setup({
+        signs = {
+          add          = { text = "▎" }, -- ligne ajoutée (vert)
+          change       = { text = "▎" }, -- ligne modifiée (orange)
+          delete       = { text = "" }, -- ligne supprimée (rouge)
+          topdelete    = { text = "" },
+          changedelete = { text = "▎" },
+          untracked    = { text = "▎" },
+        },
+        current_line_blame      = true,        -- affiche en gris "qui a écrit cette ligne et quand" après 1s
+        current_line_blame_opts = { delay = 1000 },
+        sign_priority           = 6,
+        update_debounce         = 100,
+        on_attach = function(bufnr)
+          local gs  = package.loaded.gitsigns
+          local map = function(mode, l, r, desc)
+            vim.keymap.set(mode, l, r, { buffer = bufnr, desc = desc })
+          end
+          -- Naviguer entre les blocs de modifications
+          map("n", "]c", gs.next_hunk, "Git: Bloc de modif suivant")
+          map("n", "[c", gs.prev_hunk, "Git: Bloc de modif précédent")
+          -- Actions sur le bloc sous le curseur
+          map("n", "<leader>gs", gs.stage_hunk,   "Git: Stager ce bloc")
+          map("n", "<leader>gr", gs.reset_hunk,   "Git: Annuler ce bloc")
+          map("n", "<leader>gp", gs.preview_hunk, "Git: Voir les changements de ce bloc")
+          map("n", "<leader>gb", gs.blame_line,   "Git: Voir qui a écrit cette ligne")
+        end,
+      })
+    end,
+  }
+end
+-- }}}
+
+-- {{{ indent-blankline — dessine des lignes verticales │ pour visualiser les niveaux d'indentation
+local function plug_indent_blankline()
+  return {
+    "lukas-reineke/indent-blankline.nvim",
+    main  = "ibl",
+    event = "BufRead",
+    opts  = {
+      indent  = { char = "│" },
+      scope   = { enabled = true, show_start = true }, -- met en évidence le bloc d'indentation courant
+      exclude = {
+        -- Pas de guides dans ces types de buffers (inutile et moche)
+        filetypes = { "help", "dashboard", "NvimTree", "lazy", "mason", "notify" },
+      },
+    },
+  }
+end
+-- }}}
+
+-- {{{ alpha-nvim — page d'accueil avec raccourcis qui s'affiche quand tu ouvres nvim sans fichier
+local function plug_alpha()
+  return {
+    "goolord/alpha-nvim",
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+    config       = function()
+      local alpha     = require("alpha")
+      local dashboard = require("alpha.themes.dashboard")
+
+      dashboard.section.header.val = {
+        "                                                     ",
+        "  ███╗   ██╗███████╗ ██████╗ ██╗   ██╗██╗███╗   ███╗",
+        "  ████╗  ██║██╔════╝██╔═══██╗██║   ██║██║████╗ ████║",
+        "  ██╔██╗ ██║█████╗  ██║   ██║██║   ██║██║██╔████╔██║",
+        "  ██║╚██╗██║██╔══╝  ██║   ██║╚██╗ ██╔╝██║██║╚██╔╝██║",
+        "  ██║ ╚████║███████╗╚██████╔╝ ╚████╔╝ ██║██║ ╚═╝ ██║",
+        "  ╚═╝  ╚═══╝╚══════╝ ╚═════╝   ╚═══╝  ╚═╝╚═╝     ╚═╝",
+        "                                                     ",
+      }
+
+      dashboard.section.buttons.val = {
+        dashboard.button("f", "  Fichier récent",  ":Telescope oldfiles<CR>"),
+        dashboard.button("e", "  Nouveau fichier", ":ene <BAR> startinsert<CR>"),
+        dashboard.button("p", "  Projets",         ":Telescope find_files<CR>"),
+        dashboard.button("l", "󰒲  Lazy",            ":Lazy<CR>"),
+        dashboard.button("q", "  Quitter",         ":qa<CR>"),
+      }
+
+      alpha.setup(dashboard.opts)
+    end,
+  }
+end
+-- }}}
+
+-- ============================================================
+--  LISTE DES PLUGINS
+-- ============================================================
 require("lazy").setup({
-	{ "iCyMind/NeoSolarized" },
-	{ "alec-gibson/nvim-tetris" },
-	{ "nvim-treesitter/nvim-treesitter" },
-	{ "ryanoasis/vim-devicons" },
-	{ "pangloss/vim-javascript" },
-	{ "prettier/vim-prettier", run = "yarn install --frozen-lockfile --production" },
-	{ "Jremmen/vim-ripgrep" },
-	{ "mhinz/vim-startify" },
-	{ "grvcoelho/vim-javascript-snippets" },
-	{ "tpope/vim-commentary" },
-	{ "preservim/nerdcommenter" },
-	{ "tpope/vim-surround" },
-	{ "morhetz/gruvbox" },
-	{ "pangloss/vim-javascript" },
-	{ "grvcoelho/vim-javascript-snippets" },
-	{ "kshenoy/vim-signature" },
-	--- plantuml --- doc : https://github.com/weirongxu/plantuml-previewer.vim?tab=readme-ov-file
-	{ "aklt/plantuml-syntax" },
-	{ "weirongxu/plantuml-previewer.vim" },
-	{ "tyru/open-browser.vim" },
-	---
-	{ "mechatroner/rainbow_csv" },
-	{ "tpope/vim-fugitive" },
-	{ "diepm/vim-rest-console" },
-	{ "vim-airline/vim-airline" },
-	{ "rafi/awesome-vim-colorschemes" },
-	{ "ap/vim-css-color" },
-	{ "honza/vim-snippets" },
-	{ "jiangmiao/auto-pairs" },
-	--{ "github/copilot.vim" },
-	{ "rebelot/kanagawa.nvim" },
-	{ "raghur/vim-ghost" },
-	{ "folke/which-key.nvim" },
-	{ "liuchengxu/vista.vim" }, -- utilise librairie ctags : brew install --HEAD universal-ctags/universal-ctags/universal-ctags
-	{ "ravitemer/mcphub.nvim" },
-	{ "ms-jpq/coq_nvim" },
-	plug_trailing_whitespaces(),
-	plug_treesitter(),
-	plug_x_go(),
-	plug_ale(),
-	plug_lspconfig(),
-	plug_nvim_tree(),
-	plug_avante(),
-	-- plug_noice(),
+
+  -- Thèmes de couleurs
+  { "rebelot/kanagawa.nvim" },         -- thème actif : bleu nuit japonais
+  { "morhetz/gruvbox" },               -- thème de secours
+  { "rafi/awesome-vim-colorschemes" }, -- collection de thèmes supplémentaires
+
+  -- Autocomplétion
+  { "ms-jpq/coq_nvim" },              -- suggère du code pendant que tu tapes
+
+  -- LSP et support des langages
+  plug_lspconfig(),
+  plug_treesitter(),
+  plug_x_go(),
+  plug_ale(),
+  { "pangloss/vim-javascript" },             -- coloration syntaxique JS améliorée
+  { "grvcoelho/vim-javascript-snippets" },   -- snippets JS prêts à l'emploi
+  { "mechatroner/rainbow_csv" },             -- chaque colonne CSV dans une couleur différente
+
+  -- PlantUML (diagrammes)
+  { "aklt/plantuml-syntax" },               -- coloration des fichiers .puml
+  { "weirongxu/plantuml-previewer.vim" },   -- prévisualisation des diagrammes dans le navigateur
+  { "tyru/open-browser.vim" },             -- requis par plantuml-previewer pour ouvrir le navigateur
+
+  -- Explorateur de fichiers et navigation
+  plug_nvim_tree(),
+  { "folke/which-key.nvim" },         -- affiche les raccourcis disponibles quand tu hésites
+  { "liuchengxu/vista.vim" },         -- liste les fonctions/classes du fichier comme un sommaire (nécessite: brew install --HEAD universal-ctags)
+  { "Jremmen/vim-ripgrep" },          -- recherche de texte ultra-rapide dans tous les fichiers du projet
+
+  -- Git
+  { "tpope/vim-fugitive" },           -- commandes git dans nvim : :Git status, :Git commit, :Git push...
+  plug_gitsigns(),
+
+  -- Utilitaires d'édition
+  { "tpope/vim-surround" },                                       -- entourer/changer les guillemets et parenthèses : ys pour ajouter, cs pour changer, ds pour supprimer
+  { "tpope/vim-commentary" },                                     -- commenter/décommenter : gcc sur une ligne, gc sur une sélection
+  { "tpope/vim-unimpaired" },                                     -- raccourcis en paires : ]q [q pour naviguer dans quickfix, ]b [b pour les buffers, etc.
+  { "windwp/nvim-autopairs", event = "InsertEnter", opts = {} }, -- ferme automatiquement les (, [, {, ", '
+  { "kshenoy/vim-signature" },                                    -- affiche tes marques vim dans la gouttière (m + lettre pour poser une marque)
+  { "honza/vim-snippets" },                                       -- banque de snippets pour tous les langages
+  { "junegunn/vim-peekaboo" },                                    -- prévisualise le contenu des registres quand tu appuies sur " ou @
+
+  -- Client REST
+  { "diepm/vim-rest-console" },       -- envoie des requêtes HTTP depuis un fichier .rest directement dans nvim
+
+  -- AI
+  { "ravitemer/mcphub.nvim" },        -- gère les serveurs MCP (protocole pour brancher des outils AI à nvim)
+
+  -- UI et apparence
+  plug_lualine(),
+  plug_noice(),
+  plug_indent_blankline(),
+  plug_alpha(),
+  plug_trailing_whitespaces(),
+  {
+    "NvChad/nvim-colorizer.lua",      -- affiche la vraie couleur derrière les codes CSS : #fff, rgb(255,0,0), etc.
+    event  = "BufRead",
+    config = function()
+      require("colorizer").setup({ "*" }, {
+        RGB    = true, RRGGBB = true,
+        names  = true, css    = true, css_fn = true,
+        mode   = "background",
+      })
+    end,
+  },
+
+  -- Fun
+  { "alec-gibson/nvim-tetris" },      -- tetris dans nvim avec :Tetris
 })
 
--- set foldmethod for files
--- Set default foldmethod to 'indent'
-vim.opt.foldmethod = "indent"
+-- ============================================================
+--  OPTIONS GÉNÉRALES
+-- ============================================================
+vim.o.termguicolors = true           -- active les vraies couleurs 24-bit (requis par colorizer, lualine, kanagawa...)
+vim.o.mouse        = "a"             -- souris activée dans tous les modes
+vim.o.clipboard    = "unnamedplus"   -- Ctrl+C/V communique avec le presse-papiers système
+vim.o.number       = true            -- numéros de ligne
+vim.o.showmatch    = true            -- flashe la parenthèse/accolade correspondante quand tu en fermes une
+vim.o.showmode     = false           -- inutile : lualine affiche déjà le mode en bas
+vim.o.ruler        = true            -- affiche la position du curseur (ligne:colonne) en bas à droite
+vim.o.title        = true            -- affiche le nom du fichier dans le titre du terminal
+vim.o.hidden       = true            -- permet de changer de buffer sans avoir à sauvegarder d'abord
+vim.o.wrap         = false           -- pas de retour à la ligne automatique
+vim.o.linebreak    = true            -- si wrap est activé, coupe aux mots entiers (pas au milieu d'un mot)
+vim.o.scrolloff    = 8              -- garde toujours 8 lignes visibles au-dessus et en-dessous du curseur
+vim.o.wildmenu     = true            -- autocomplétion des commandes vim avec la touche Tab
+vim.o.encoding     = "UTF-8"
+vim.o.updatetime   = 300             -- délai en ms avant que LSP et gitsigns se mettent à jour
+vim.o.signcolumn   = "number"        -- les icônes git/erreurs remplacent les numéros de ligne (économise de l'espace)
+vim.o.laststatus   = 2              -- la barre de statut (lualine) est toujours visible
 
---Airline display configuration
-vim.g.airline_extensions_tabline_enabled = 1
-vim.g.airline_extensions_tabline_left_sep = " "
-vim.g.airline_extensions_tabline_left_alt_sep = "|"
-vim.g.airline_extensions_tabline_formatter = "default"
-vim.g.airline_powerline_fonts = 1
+-- Indentation
+vim.o.tabstop      = 4              -- une tabulation s'affiche comme 4 espaces
+vim.o.softtabstop  = 2              -- Tab et Backspace en mode insertion bougent de 2 espaces
+vim.o.shiftwidth   = 4              -- >> et << indentent/désindentent de 4 espaces
+vim.o.expandtab    = true            -- la touche Tab insère des espaces (pas un vrai caractère tab)
 
--- Set miscellaneous configurations
-vim.opt.foldmethod = "marker"
-vim.o.mouse = "a"
-vim.o.clipboard = "unnamed"
-vim.o.showmatch = true
-vim.o.tabstop = 4
-vim.o.softtabstop = 2
-vim.o.shiftwidth = 4
-vim.o.filetype = "on"
-vim.o.foldlevelstart = 10
-vim.o.signcolumn = "number"
-vim.o.encoding = "UTF-8"
-vim.o.updatetime = 300
-vim.o.foldnestmax = 40
-vim.o.tabpagemax = 10
-vim.o.laststatus = 2
-vim.o.foldcolumn = "2"
-vim.o.scrolloff = 8
-vim.o.foldenable = true
-vim.o.showmode = false
-vim.o.expandtab = true
-vim.o.linebreak = true
-vim.o.wildmenu = true
-vim.o.backup = false
-vim.o.writebackup = false
-vim.o.undofile = true
-vim.o.wrap = false
-vim.o.hidden = true
-vim.o.number = true
-vim.cmd("syntax on")
-vim.o.ruler = true
-vim.o.title = true
-vim.cmd("set nocompatible")
+-- Sauvegarde et historique
+vim.o.backup       = false           -- pas de fichiers de sauvegarde temporaires (genre fichier~)
+vim.o.writebackup  = false
+vim.o.undofile     = true            -- garde l'historique d'annulation même après avoir fermé le fichier
 
---python3
-vim.g.python3_host_prog = "/usr/bin/python3"
+-- Pliage de code (les {{{ }}} dans ce fichier créent des sections pliables)
+vim.o.foldmethod   = "marker"        -- {{{ ouvre une section, }}} la ferme — za pour plier/déplier
+vim.o.foldlevelstart = 10            -- au démarrage, tout est ouvert (niveau 10 = presque tout)
+vim.o.foldnestmax  = 40              -- niveau maximum d'imbrication de pliage
+vim.o.foldcolumn   = "2"             -- colonne sur la gauche qui montre les indicateurs de pliage
+vim.o.foldenable   = true
+vim.o.tabpagemax   = 10              -- maximum 10 onglets ouverts en même temps
 
--- tabby configuration
--- vim.g.tabby_keybinding_accept = '<Tab>'
-
-vim.cmd([[autocmd FileType javascript set foldmethod=marker]])
-vim.cmd([[autocmd FileType golang set foldmethod=indent]])
-
--- set colorscheme
+-- ============================================================
+--  THÈME DE COULEURS
+-- ============================================================
 vim.cmd([[colorscheme gruvbox]])
 
--- shortcuts
--- Allow search of currently selected text using //
-vim.api.nvim_set_keymap("v", "//", 'y/<C-R>"<CR>', { noremap = true })
--- Copier vers le presse-papiers système
-vim.api.nvim_set_keymap("n", "<C-c>", '"+y', { noremap = true, silent = true })
-vim.api.nvim_set_keymap("v", "<C-c>", '"+y', { noremap = true, silent = true })
+-- ============================================================
+--  MÉTHODE DE PLIAGE PAR TYPE DE FICHIER
+--  (chaque langage a sa propre logique d'indentation)
+-- ============================================================
+vim.api.nvim_create_autocmd("FileType", {
+  pattern  = { "javascript" },
+  callback = function() vim.opt_local.foldmethod = "marker" end,   -- JS : pliage par {{{ }}}
+})
+vim.api.nvim_create_autocmd("FileType", {
+  pattern  = { "go", "golang" },
+  callback = function() vim.opt_local.foldmethod = "indent" end,   -- Go : pliage par indentation
+})
+vim.api.nvim_create_autocmd("FileType", {
+  pattern  = { "typescript" },
+  callback = function() vim.opt_local.foldmethod = "syntax" end,   -- TS : pliage par syntaxe
+})
 
--- Allow clearing of searching text using ///
-vim.api.nvim_set_keymap("n", "///", ":nohl<CR>", { noremap = true })
+-- ============================================================
+--  RACCOURCIS CLAVIER GLOBAUX
+-- ============================================================
+vim.keymap.set("v", "//",             'y/<C-R>"<CR>', { noremap = true,                desc = "Rechercher le texte sélectionné" })
+vim.keymap.set({ "n", "v" }, "<C-c>", '"+y',          { noremap = true, silent = true, desc = "Copier vers le presse-papiers système" })
+vim.keymap.set("n", "///",            ":nohl<CR>",    { noremap = true,                desc = "Effacer la surbrillance de recherche" })
 
--- Use LspAttach autocommand to only map the following keys after the language server attaches to the current buffer
+-- ============================================================
+--  RACCOURCIS LSP (actifs uniquement quand un serveur de langage est attaché au fichier)
+-- ============================================================
 vim.api.nvim_create_autocmd("LspAttach", {
-	group = vim.api.nvim_create_augroup("UserLspConfig", {}),
-	callback = function(ev)
-		-- Enable completion triggered by <c-x><c-o>
-		vim.bo[ev.buf].omnifunc = "v:lua.vim.lsp.omnifunc"
+  group    = vim.api.nvim_create_augroup("UserLspConfig", {}),
+  callback = function(ev)
+    vim.bo[ev.buf].omnifunc = "v:lua.vim.lsp.omnifunc"
 
-		-- Buffer local mappings.
-		-- See `:help vim.lsp.*` for documentation on any of the below functions
-		local wk = require("which-key")
-		-- g prefix
-		wk.add({ { "gd", "<cmd>lua vim.lsp.buf.definition()<cr>", desc = "LSP Goto Definition" } })
-		wk.add({ { "gD", "<cmd>lua vim.lsp.buf.declaration()<cr>", desc = "LSP Goto Declaration" } })
-		wk.add({ { "gi", "<cmd>lua vim.lsp.buf.implementation()<cr>", desc = "LSP Goto Implementation" } })
-		wk.add({ { "gr", "<cmd>lua vim.lsp.buf.references()<cr>", desc = "LSP Goto References" } })
-		-- leader prefix
-		wk.add({
-			{ "<leader>l", group = "LSP" },
-			{ "<leader>la", "<cmd>lua vim.lsp.buf.code_action()<cr>", desc = "LSP Code Action" },
-			{ "<leader>lf", "<cmd>lua vim.lsp.buf.format { async = true }<cr>", desc = "LSP Format" },
-			{ "<leader>lr", "<cmd>lua vim.lsp.buf.rename()<cr>", desc = "LSP Rename" },
-		})
+    local wk   = require("which-key")
+    local opts = { buffer = ev.buf }
 
-		local opts = { buffer = ev.buf }
-		vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
-		vim.keymap.set("n", "<C-k>", vim.lsp.buf.signature_help, opts)
-		vim.keymap.set("n", "<space>wa", vim.lsp.buf.add_workspace_folder, opts)
-		vim.keymap.set("n", "<space>wr", vim.lsp.buf.remove_workspace_folder, opts)
-		vim.keymap.set("n", "<space>wl", function()
-			print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
-		end, opts)
-		vim.keymap.set("n", "<space>D", vim.lsp.buf.type_definition, opts)
-		vim.keymap.set("n", "<space>rn", vim.lsp.buf.rename, opts)
-		vim.keymap.set({ "n", "v" }, "<space>ca", vim.lsp.buf.code_action, opts)
-		vim.keymap.set("n", "<space>f", function()
-			vim.lsp.buf.format({ async = true })
-		end, opts)
-	end,
+    -- Navigation dans le code (préfixe g)
+    wk.add({ { "gd", "<cmd>lua vim.lsp.buf.definition()<cr>",     desc = "Aller à la définition" } })
+    wk.add({ { "gD", "<cmd>lua vim.lsp.buf.declaration()<cr>",    desc = "Aller à la déclaration" } })
+    wk.add({ { "gi", "<cmd>lua vim.lsp.buf.implementation()<cr>", desc = "Aller à l'implémentation" } })
+    wk.add({ { "gr", "<cmd>lua vim.lsp.buf.references()<cr>",     desc = "Voir toutes les utilisations" } })
+
+    -- Actions LSP (préfixe <leader>l — par défaut \ puis l)
+    wk.add({
+      { "<leader>l",  group = "LSP" },
+      { "<leader>la", "<cmd>lua vim.lsp.buf.code_action()<cr>",            desc = "Actions disponibles sur ce code" },
+      { "<leader>lf", "<cmd>lua vim.lsp.buf.format { async = true }<cr>",  desc = "Formater le fichier entier" },
+      { "<leader>lr", "<cmd>lua vim.lsp.buf.rename()<cr>",                 desc = "Renommer ce symbole partout" },
+    })
+
+    -- Raccourcis divers
+    vim.keymap.set("n", "K",         vim.lsp.buf.hover,          opts) -- affiche la doc du mot sous le curseur
+    vim.keymap.set("n", "<C-k>",     vim.lsp.buf.signature_help, opts) -- affiche la signature de la fonction
+    vim.keymap.set("n", "<space>D",  vim.lsp.buf.type_definition, opts)
+    vim.keymap.set("n", "<space>rn", vim.lsp.buf.rename,          opts)
+    vim.keymap.set({ "n", "v" }, "<space>ca", vim.lsp.buf.code_action, opts)
+    vim.keymap.set("n", "<space>f",  function()
+      vim.lsp.buf.format({ async = true })
+    end, opts)
+    -- Gestion des dossiers de workspace LSP (rarement utile au quotidien)
+    vim.keymap.set("n", "<space>wa", vim.lsp.buf.add_workspace_folder,    opts)
+    vim.keymap.set("n", "<space>wr", vim.lsp.buf.remove_workspace_folder, opts)
+    vim.keymap.set("n", "<space>wl", function()
+      print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
+    end, opts)
+  end,
 })
